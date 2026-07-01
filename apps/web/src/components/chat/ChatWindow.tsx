@@ -1,14 +1,14 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { 
-  Search, 
-  Phone, 
-  Video, 
-  Info, 
-  Paperclip, 
-  Smile, 
-  Send, 
+import {
+  Search,
+  Phone,
+  Video,
+  Info,
+  Paperclip,
+  Smile,
+  Send,
   CheckCheck,
   Download,
   FileText,
@@ -138,7 +138,12 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
   // 1. EMPTY STATE RENDER
   if (!activeRoomId) {
     return (
-      <div className="flex-1 h-full flex flex-col bg-[#FAFAFC] dark:bg-[#09090B] select-none">
+      <div className="flex-1 h-full flex flex-col bg-[#FAFAFC] dark:bg-[#09090B] select-none"
+        style={{
+          backgroundImage: "url('/assets/images/wallpaper.png')",
+          backgroundSize: "360px",
+          backgroundRepeat: "repeat",
+        }}>
         {/* Empty State Header */}
         <div className="h-20 px-8 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950">
           <div>
@@ -156,10 +161,10 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
         {/* Empty State Body */}
         <div className="flex-1 flex flex-col items-center justify-center text-center px-6">
           <div className="relative w-80 h-64 flex items-center justify-center">
-            
+
             {/* Ambient Illustration background shapes */}
             <div className="absolute w-52 h-52 rounded-full bg-[#19E68C]/5 blur-3xl" />
-            
+
             {/* SVG 3D-styled speech bubbles & paper plane */}
             <svg viewBox="0 0 200 200" className="w-56 h-56 drop-shadow-xl z-10">
               <defs>
@@ -194,25 +199,23 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
           <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-sm">
             Select a chat from the left to view messages or start a new conversation.
           </p>
-
-           
         </div>
-      </div>
+      </div >
     );
   }
 
   // 2. ACTIVE CHAT STATE RENDER
   return (
     <div className="flex-1 h-full flex flex-col bg-[#FAFAFC] dark:bg-[#09090B] select-text">
-      
+
       {/* Active Chat Header */}
       <div className="h-20 px-8 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <img 
-              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150" 
-              className="h-10 w-10 rounded-full object-cover" 
-              alt="Avatar" 
+            <img
+              src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150"
+              className="h-10 w-10 rounded-full object-cover"
+              alt="Avatar"
             />
             <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 border border-white dark:border-zinc-950" />
           </div>
@@ -226,22 +229,28 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
           <button className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition"><Search className="h-5 w-5" /></button>
           <button className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition"><Phone className="h-5 w-5" /></button>
           <button className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition"><Video className="h-5 w-5" /></button>
-          <button 
+          <button
             onClick={onToggleDetails}
-            className={`p-2 rounded-xl transition ${
-              isDetailsOpen 
-                ? "bg-[#19E68C]/15 text-emerald-600 dark:bg-zinc-900 dark:text-[#19E68C]" 
-                : "hover:bg-zinc-100 dark:hover:bg-zinc-900"
-            }`}
+            className={`p-2 rounded-xl transition ${isDetailsOpen
+              ? "bg-[#19E68C]/15 text-emerald-650 dark:bg-zinc-900 dark:text-[#19E68C]"
+              : "hover:bg-zinc-100 dark:hover:bg-zinc-900"
+              }`}
           >
             <Info className="h-5 w-5" />
           </button>
         </div>
       </div>
 
-      {/* Messages Feed Area */}
-      <div className="flex-1 overflow-y-auto px-8 py-6 space-y-4">
-        
+      {/* Messages Feed Area with wallpaper.png background */}
+      <div
+        className="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-zinc-50/90 dark:bg-[#09090B]/95 dark:bg-blend-multiply"
+        style={{
+          backgroundImage: "url('/assets/images/wallpaper.png')",
+          backgroundSize: "360px",
+          backgroundRepeat: "repeat",
+        }}
+      >
+
         {/* Today Centered Divider */}
         <div className="flex justify-center my-4">
           <span className="px-3 py-1 rounded-full bg-zinc-200/50 dark:bg-zinc-800 text-[10px] sm:text-xs text-zinc-500 font-semibold tracking-wider uppercase">
@@ -261,10 +270,10 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
                 </div>
                 <div className="w-[320px] rounded-2xl border border-zinc-200/80 bg-white shadow-md p-3 dark:border-zinc-800 dark:bg-zinc-900">
                   <div className="relative h-40 rounded-xl overflow-hidden bg-slate-100 flex items-center justify-center border border-zinc-200 dark:border-zinc-800">
-                    <img 
-                      src="https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=400" 
-                      className="w-full h-full object-cover opacity-90" 
-                      alt="Attachment Preview" 
+                    <img
+                      src="https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=400"
+                      className="w-full h-full object-cover opacity-90"
+                      alt="Attachment Preview"
                     />
                   </div>
                   <div className="flex items-center justify-between mt-3 px-1">
@@ -286,20 +295,19 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
 
           return (
             <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
-              
+
               {/* Message Meta Info */}
               <div className="flex items-center gap-2 mb-1">
                 {!isMe && <span className="text-[10px] font-bold text-slate-500 dark:text-zinc-455">{msg.senderName}</span>}
-                <span className="text-[10px] text-zinc-400">{msg.timestamp}</span>
+                <span className="text-[10px] text-zinc-455">{msg.timestamp}</span>
               </div>
 
               {/* Message Bubble Card */}
-              <div 
-                className={`max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-sm ${
-                  isMe 
-                    ? "bg-[#EAFDF5] text-emerald-950 rounded-tr-none dark:bg-zinc-800 dark:text-zinc-100" 
-                    : "bg-white text-slate-800 rounded-tl-none border border-zinc-200/80 dark:bg-zinc-900 dark:text-zinc-250 dark:border-zinc-800"
-                }`}
+              <div
+                className={`max-w-md px-4 py-2.5 rounded-2xl text-xs sm:text-sm shadow-sm ${isMe
+                  ? "bg-[#EAFDF5] text-emerald-955 rounded-tr-none dark:bg-zinc-800 dark:text-zinc-100"
+                  : "bg-white text-slate-800 rounded-tl-none border border-zinc-200/80 dark:bg-zinc-900 dark:text-zinc-250 dark:border-zinc-800"
+                  }`}
               >
                 {msg.content}
               </div>
@@ -338,9 +346,9 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
           <button type="button" className="p-2.5 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition text-zinc-400">
             <Paperclip className="h-5 w-5" />
           </button>
-          
-          <input 
-            type="text" 
+
+          <input
+            type="text"
             value={inputText}
             onChange={(e) => setInputText(e.target.value)}
             placeholder="Type a message..."
@@ -351,9 +359,9 @@ export function ChatWindow({ activeRoomId, onToggleDetails, isDetailsOpen }: Cha
             <Smile className="h-5 w-5" />
           </button>
 
-          <button 
+          <button
             type="submit"
-            className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-r from-[#10B981] to-[#19E68C] text-zinc-950 shadow-md shadow-[#19E68C]/15 active:scale-[0.98] transition font-bold"
+            className="h-11 w-11 flex items-center justify-center rounded-xl bg-gradient-to-r from-[#10B981] to-[#19E68C] text-zinc-955 shadow-md shadow-[#19E68C]/15 active:scale-[0.98] transition font-bold"
           >
             <Send className="h-4.5 w-4.5" />
           </button>
