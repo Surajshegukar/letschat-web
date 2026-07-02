@@ -1,159 +1,79 @@
-# Turborepo starter
+# 💬 Let's Chat — Next.js & Turborepo Monorepo Chat Client
 
-This Turborepo starter is maintained by the Turborepo core team.
+Let's Chat is a gorgeous, modern, high-fidelity chat client monorepo built using Next.js, TypeScript, Tailwind CSS, next-themes, and Zustand. It features premium design aesthetics, fluid calling screens, advanced chat routing filters, and clean modular component design patterns.
 
-## Using this example
+---
 
-Run the following command:
+## ✨ Features
 
-```sh
-npx create-turbo@latest
+- **📞 Calling Overlay & Video Streams**:
+  - Full-bleed calling overlays supporting both **Audio** and **Video** modes.
+  - Concurrent radial pulsing wave animations simulating voice dial ringing.
+  - Picture-in-picture (PiP) local camera stream cards overlaying full-bleed video backgrounds.
+  - **Minimize Floating Widget**: Collapses the call into a compact floating popup in the bottom right corner so users can check other logs or chat while keeping the call active.
+  - Mic mute, camera disable, and speaker route controls with instant icon statuses.
+- **🏷️ Advanced Chat Filter Pills**:
+  - Filter chats dynamically by **All**, **Unread** (MailOpen icon), **Direct**, **Groups** (Users icon), **Mentions** (AtSign icon), **Pinned** (Pin icon), and **Archive** (Archive icon).
+  - Dynamic count badges that automatically hide if active matches equal 0.
+- **🌗 Sidebar Theme Toggler**:
+  - Integrated themes switch located directly above the profile footer block.
+  - Collapses into a sun/moon icon button or expands into a sliding switch.
+- **🔒 Authentication & Progress Routing**:
+  - Ambient loading splash loader page that redirects users to `/sign-in` as soon as progress reaches 100%.
+  - Prefilled mock sign-in credentials (`admin@letschat.com` / `password123`) for fast testing.
+  - Submit listeners that route authentication requests straight to `/chat`.
+- **📂 Shared Assets Modal Overlay**:
+  - Tabbed overlay listing shared media gallery grids, spreadsheet/document sheets, and clickable external links.
+
+---
+
+## 📂 Monorepo Structure
+
+```
+letschat-web/
+├── apps/
+│   ├── web/                     # Primary Next.js chat client app
+│   └── api/                     # Backend service stub
+├── packages/
+│   ├── eslint-config/           # Custom ESLint shared configurations
+│   ├── typescript-config/       # Shared TypeScript configurations
+│   └── ui/                      # Shared component library
 ```
 
-## What's inside?
+---
 
-This Turborepo includes the following packages/apps:
+## 🚀 Getting Started
 
-### Apps and Packages
-
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
+### 1. Install Dependencies
+Run the following command in the root of the project:
 ```sh
-cd my-turborepo
-turbo build
+npm install
 ```
 
-Without global `turbo`, use your package manager:
-
+### 2. Run Local Development Server
+Boot up all monorepo apps and packages concurrently:
 ```sh
-cd my-turborepo
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+npm run dev
+```
+The web client will be available at [http://localhost:3000](http://localhost:3000).
+
+### 3. Run Build & Type Checks
+To verify production compiler and typescript safety:
+```sh
+npm run build
+# Or test typescript checks on the web workspace:
+npm run check-types --workspace=web
 ```
 
-You can build a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
+---
 
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
+## ⚡ Vercel Deployment
 
-```sh
-turbo build --filter=docs
-```
+This project is fully configured and ready for production deployment to **Vercel** with strict ESLint and TypeScript compilations.
 
-Without global `turbo`:
-
-```sh
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
-
-### Develop
-
-To develop all apps and packages, run the following command:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo dev
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
-
-You can develop a specific package by using a [filter](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters):
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo dev --filter=web
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended):
-
-```sh
-cd my-turborepo
-turbo login
-```
-
-Without global `turbo`, use your package manager:
-
-```sh
-cd my-turborepo
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed:
-
-```sh
-turbo link
-```
-
-Without global `turbo`:
-
-```sh
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+### Deployment Configuration:
+1. Link your GitHub repository to [Vercel](https://vercel.com).
+2. Set the **Root Directory** option in the Vercel project settings to `apps/web`.
+3. Set the **Framework Preset** option to `Next.js`.
+4. Leave build commands as default (`next build`) or use `npm run build` from the workspace root.
+5. Vercel will automatically build the client package, pull types from `@repo/typescript-config`, and deploy it successfully.

@@ -10,7 +10,7 @@ interface VideoCallLayoutProps {
 
 export function VideoCallLayout({
   recipientName,
-  recipientAvatarUrl,
+  recipientAvatarUrl: _recipientAvatarUrl,
   status,
   isSelfVideoOff = false,
 }: VideoCallLayoutProps) {

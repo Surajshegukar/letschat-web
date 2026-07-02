@@ -5,13 +5,7 @@ import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   MessageSquare,
-  AtSign,
-  Pin,
-  MailOpen,
-  Users,
   Radio,
-  Archive,
-  Trash2,
   Phone,
   Sun,
   Moon,

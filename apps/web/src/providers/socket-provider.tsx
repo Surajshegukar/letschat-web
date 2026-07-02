@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -16,8 +16,8 @@ const SocketContext = createContext<SocketContextType>({
 export const useSocket = () => useContext(SocketContext);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const [socket, setSocket] = useState<Socket | null>(null);
-  const [isConnected, setIsConnected] = useState(false);
+  const [socket, _setSocket] = useState<Socket | null>(null);
+  const [isConnected, _setIsConnected] = useState(false);
 
   useEffect(() => {
     // Commented out socket connection for static mode
