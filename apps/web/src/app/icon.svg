@@ -4,14 +4,14 @@
   width="100%"
   height="100%"
 >
-  <defs>
+ <defs>
     <linearGradient id="webLogoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stopColor="#00C9FF" />
-      <stop offset="100%" stopColor="#19E68C" />
+      <stop offset="0%" stop-color="#00C9FF" />
+      <stop offset="100%" stop-color="#19E68C" />
     </linearGradient>
   </defs>
   {/* Background Outer Chat Bubble */}
-  <path
+ <path
     d="M200 100C235 100 265 115 265 165C265 205 240 230 200 230C155 230 135 205 135 165C135 125 165 100 200 100Z"
     fill="url(#webLogoGrad)"
   />
