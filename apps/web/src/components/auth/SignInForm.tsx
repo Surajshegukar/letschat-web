@@ -1,18 +1,25 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Input, Button, Checkbox, Divider } from "@/components/ui";
 import SocialLogin from "./SocialLogin";
 import { BrandLogo } from "../BrandLogo";
 
 export default function SignInForm() {
+    const [email, setEmail] = useState("admin@letschat.com");
+    const [password, setPassword] = useState("password123");
+    const router = useRouter();
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        router.push("/chat");
+    };
+
     return (
         <section className="flex items-center justify-center p-4 sm:p-8 bg-[#FAFAFC] dark:bg-[#09090B] min-h-screen">
             <div className="w-full max-w-lg rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-10 shadow-xl dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:backdrop-blur-md">
-
-                {/* <div className="flex justify-center mb-3">
-                    <BrandLogo size={55} />
-                </div> */}
 
                 <h1 className=" text-2xl sm:text-3xl font-bold tracking-tight text-zinc-800 dark:text-white text-center">
                     Sign In
@@ -30,12 +37,14 @@ export default function SignInForm() {
                     <Divider />
                 </div>
 
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-5" onSubmit={handleSubmit}>
                     <div>
                         <Input
                             type="email"
                             label="Email Address"
                             placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
@@ -55,6 +64,8 @@ export default function SignInForm() {
                         <Input
                             type="password"
                             placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
@@ -66,7 +77,6 @@ export default function SignInForm() {
                                 Remember me
                             </span>
                         </label>
-
                     </div>
 
                     <Button
@@ -88,11 +98,6 @@ export default function SignInForm() {
                         </span>
                     </Link>
                 </div>
-
-                {/* <p className="mt-4 text-center text-[12px] font-semibold tracking-wide text-zinc-500 dark:text-zinc-500 uppercase">
-                    Your data is protected with enterprise-grade security.
-                </p> */}
-
             </div>
         </section>
     );

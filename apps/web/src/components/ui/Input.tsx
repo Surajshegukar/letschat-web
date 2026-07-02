@@ -25,7 +25,7 @@ export default function Input({
             <input
                 {...props}
                 className={clsx(
-                    "w-full h-12 rounded-xl border border-zinc-300 px-4 outline-none transition bg-white text-zinc-900 dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-zinc-150",
+                    "w-full h-12 rounded-xl border border-zinc-300 px-4 outline-none transition bg-white text-zinc-900 dark:bg-zinc-900/50 dark:border-zinc-800 dark:text-zinc-100",
 
                     "focus:border-[#00C9FF] focus:ring-4 focus:ring-[#00C9FF]/10",
 

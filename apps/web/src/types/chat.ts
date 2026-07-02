@@ -24,4 +24,7 @@ export interface ChatRoom {
   timestamp: string;
   unreadCount?: number;
   isOnline?: boolean;
+  isPinned?: boolean;
+  isArchived?: boolean;
+  hasMention?: boolean;
 }

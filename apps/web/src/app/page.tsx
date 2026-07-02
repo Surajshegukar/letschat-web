@@ -2,6 +2,7 @@
 
 import React from "react";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import { useSplashLoading } from "@/hooks/use-splash-loading";
 import { SplashBackground } from "@/components/SplashBackground";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -11,6 +12,13 @@ import { EncryptionNotice } from "@/components/EncryptionNotice";
 
 export default function Home() {
   const { mounted, loadingProgress } = useSplashLoading();
+  const router = useRouter();
+
+  React.useEffect(() => {
+    if (loadingProgress >= 100) {
+      router.push("/sign-in");
+    }
+  }, [loadingProgress, router]);
 
   if (!mounted) return null;
 

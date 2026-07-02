@@ -1,0 +1,313 @@
+import { ChatRoom, Message } from "@/types/chat";
+import { CallRecord } from "@/types/calls";
+
+export const mockRooms: ChatRoom[] = [
+  {
+    id: "olivia",
+    name: "Olivia Rhye",
+    type: "direct",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    lastMessage: "Hey! How are you today?",
+    timestamp: "11:30 AM",
+    unreadCount: 2,
+    isOnline: true,
+    isPinned: true,
+  },
+  {
+    id: "frontend",
+    name: "Frontend Team",
+    type: "group",
+    lastMessage: "Alex: New components are ready.",
+    timestamp: "11:28 AM",
+    unreadCount: 3,
+    hasMention: true,
+  },
+  {
+    id: "marketing",
+    name: "Marketing Team",
+    type: "group",
+    lastMessage: "Sophia: Can we reschedule...",
+    timestamp: "10:45 AM",
+    unreadCount: 5,
+  },
+  {
+    id: "lucas",
+    name: "Lucas Garcia",
+    type: "direct",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    lastMessage: "Sounds good! 👍",
+    timestamp: "09:36 AM",
+    isOnline: true,
+    isPinned: true,
+  },
+  {
+    id: "ui-ux",
+    name: "UI/UX Team",
+    type: "group",
+    lastMessage: "Emma: Figma file updated.",
+    timestamp: "Yesterday",
+    unreadCount: 2,
+  },
+  {
+    id: "design-system",
+    name: "Design System",
+    type: "group",
+    lastMessage: "Jonas: Added new tokens",
+    timestamp: "Yesterday",
+  },
+  {
+    id: "mia",
+    name: "Mia Johnson",
+    type: "direct",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    lastMessage: "See you tomorrow!",
+    timestamp: "Yesterday",
+  },
+  {
+    id: "devops",
+    name: "DevOps Team",
+    type: "group",
+    lastMessage: "You: Deployment completed",
+    timestamp: "Friday",
+    isArchived: true,
+  },
+  {
+    id: "project-alpha",
+    name: "Project Alpha",
+    type: "group",
+    lastMessage: "Robert: New update available",
+    timestamp: "Friday",
+    isArchived: true,
+  },
+];
+
+export const initialOliviaMessages: Message[] = [
+  {
+    id: "m1",
+    senderId: "olivia",
+    senderName: "Olivia Rhye",
+    content: "Hey! How are you today? 👋",
+    timestamp: "11:28 AM",
+    status: "read",
+  },
+  {
+    id: "m2",
+    senderId: "me",
+    senderName: "John Doe",
+    content: "I'm good! Just working on the new dashboard design.",
+    timestamp: "11:28 AM",
+    status: "read",
+  },
+  {
+    id: "m3",
+    senderId: "olivia",
+    senderName: "Olivia Rhye",
+    content: "That's great! Can't wait to see it.",
+    timestamp: "11:29 AM",
+    status: "read",
+  },
+  {
+    id: "m4",
+    senderId: "me",
+    senderName: "John Doe",
+    content: "Here's a quick preview 👇",
+    timestamp: "11:29 AM",
+    status: "read",
+  },
+  {
+    id: "m5",
+    senderId: "me",
+    senderName: "John Doe",
+    content: "",
+    timestamp: "11:29 AM",
+    status: "read",
+    attachment: {
+      name: "dashboard-preview.png",
+      size: "2.4 MB",
+    },
+  },
+  {
+    id: "m6",
+    senderId: "olivia",
+    senderName: "Olivia Rhye",
+    content: "Wow! Looks amazing 😍",
+    timestamp: "11:30 AM",
+    status: "read",
+  },
+  {
+    id: "m7",
+    senderId: "me",
+    senderName: "John Doe",
+    content: "Thanks! Let me know your thoughts.",
+    timestamp: "11:30 AM",
+    status: "read",
+  },
+];
+
+export const mockMedia = [
+  {
+    id: "m1",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=300",
+    title: "Dashboard preview",
+  },
+  {
+    id: "m2",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?w=300",
+    title: "Landing page wireframe",
+  },
+  {
+    id: "m3",
+    type: "video",
+    url: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=300",
+    title: "Analytics walkthrough",
+  },
+  {
+    id: "m4",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1531403009284-440f080d1e12?w=300",
+    title: "Component specifications",
+  },
+  {
+    id: "m5",
+    type: "image",
+    url: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=300",
+    title: "Conversion rates report",
+  },
+  {
+    id: "m6",
+    type: "video",
+    url: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=300",
+    title: "Team sync recording",
+  },
+];
+
+export const mockDocs = [
+  {
+    id: "d1",
+    name: "Design_System_v1.2.pdf",
+    size: "12.8 MB",
+    type: "pdf",
+    date: "Today at 10:24 AM",
+  },
+  {
+    id: "d2",
+    name: "Feedback_Form_Q2.xlsx",
+    size: "1.4 MB",
+    type: "spreadsheet",
+    date: "Yesterday at 4:15 PM",
+  },
+  {
+    id: "d3",
+    name: "Dashboard_Icons_SVG.zip",
+    size: "24.5 MB",
+    type: "zip",
+    date: "Jun 28, 2026",
+  },
+  {
+    id: "d4",
+    name: "Technical_Specifications.docx",
+    size: "450 KB",
+    type: "doc",
+    date: "Jun 24, 2026",
+  },
+];
+
+export const mockLinks = [
+  {
+    id: "l1",
+    title: "Figma - LetsChat Dashboard Redesign",
+    description: "Collaborative design file containing responsive mockups, variables, and dark theme variables.",
+    url: "https://figma.com/file/letschat-redesign",
+    domain: "figma.com",
+    thumbnail: "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?w=100",
+    date: "Today at 11:29 AM",
+  },
+  {
+    id: "l2",
+    title: "GitHub - surajshegukar/letschat-web",
+    description: "Repository containing client application code, Turborepo pipelines, and Tailwind configurations.",
+    url: "https://github.com/surajshegukar/letschat-web",
+    domain: "github.com",
+    thumbnail: "https://images.unsplash.com/photo-1618401471353-b98aedd07871?w=100",
+    date: "Jun 28, 2026",
+  },
+  {
+    id: "l3",
+    title: "Next.js 16 Documentation - Turbopack",
+    description: "Learn about Next.js 16 compilation optimizations, app routing configurations, and typegen utilities.",
+    url: "https://nextjs.org/docs",
+    domain: "nextjs.org",
+    thumbnail: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=100",
+    date: "Jun 22, 2026",
+  },
+];
+
+export const mockCalls: CallRecord[] = [
+  {
+    id: "c1",
+    name: "Olivia Rhye",
+    avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150",
+    isOnline: true,
+    type: "video",
+    status: "incoming",
+    timestamp: "Today, 10:24 AM",
+    history: [
+      { id: "h1", timestamp: "Today, 10:24 AM", type: "incoming", duration: "14 mins" },
+      { id: "h2", timestamp: "Yesterday, 4:15 PM", type: "missed" },
+      { id: "h3", timestamp: "Jun 28, 2026, 11:12 AM", type: "outgoing", duration: "5 mins" },
+    ],
+  },
+  {
+    id: "c2",
+    name: "Lucas Garcia",
+    avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150",
+    isOnline: true,
+    type: "audio",
+    status: "missed",
+    timestamp: "Today, 8:40 AM",
+    history: [
+      { id: "h4", timestamp: "Today, 8:40 AM", type: "missed" },
+      { id: "h5", timestamp: "Yesterday, 2:30 PM", type: "outgoing", duration: "8 mins" },
+    ],
+  },
+  {
+    id: "c3",
+    name: "Sophia Martinez",
+    avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150",
+    isOnline: false,
+    type: "audio",
+    status: "outgoing",
+    timestamp: "Yesterday, 6:15 PM",
+    history: [
+      { id: "h6", timestamp: "Yesterday, 6:15 PM", type: "outgoing", duration: "2 mins" },
+    ],
+  },
+  {
+    id: "c4",
+    name: "Emma Watson",
+    avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150",
+    isOnline: true,
+    type: "video",
+    status: "incoming",
+    timestamp: "Jun 29, 2026, 3:20 PM",
+    history: [
+      { id: "h7", timestamp: "Jun 29, 2026, 3:20 PM", type: "incoming", duration: "42 mins" },
+      { id: "h8", timestamp: "Jun 25, 2026, 1:10 PM", type: "incoming", duration: "12 mins" },
+    ],
+  },
+  {
+    id: "c5",
+    name: "Jonas Blue",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=150",
+    isOnline: false,
+    type: "audio",
+    status: "missed",
+    timestamp: "Jun 24, 2026, 9:05 AM",
+    history: [
+      { id: "h9", timestamp: "Jun 24, 2026, 9:05 AM", type: "missed" },
+    ],
+  },
+];
+
