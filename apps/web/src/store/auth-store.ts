@@ -1,10 +1,12 @@
 import { create } from "zustand";
 
-interface User {
+export interface User {
   id: string;
   username: string;
   email: string;
   avatarUrl?: string;
+  about?: string;
+  soundEnabled?: boolean;
 }
 
 interface AuthState {
@@ -15,13 +17,21 @@ interface AuthState {
   setAuth: (user: User, token: string) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
+  updateUser: (fields: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  user: null,
+  user: {
+    id: "me",
+    username: "John Doe",
+    email: "admin@letschat.com",
+    avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+    about: "Hey there! I am using Let's Chat.",
+    soundEnabled: true,
+  },
   token: typeof window !== "undefined" ? localStorage.getItem("token") : null,
-  isAuthenticated: false,
-  isLoading: true,
+  isAuthenticated: true,
+  isLoading: false,
   setAuth: (user, token) => {
     if (typeof window !== "undefined") {
       localStorage.setItem("token", token);
@@ -35,4 +45,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ user: null, token: null, isAuthenticated: false, isLoading: false });
   },
   setLoading: (isLoading) => set({ isLoading }),
+  updateUser: (fields) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...fields } : null,
+    })),
 }));

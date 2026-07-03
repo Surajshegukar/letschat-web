@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Sidebar } from "@/components/sidebar/Sidebar";
+import { SettingsDrawer } from "@/components/sidebar/SettingsDrawer";
 import { ActiveCallScreen } from "@/components/calls/active-call/ActiveCallScreen";
 import { useCallStore } from "@/store/call-store";
 
@@ -16,7 +17,11 @@ export default function MainLayout({
     <div className="h-screen w-screen flex bg-zinc-100 dark:bg-zinc-950 overflow-hidden font-sans select-none">
       {/* Shared Pane 1: Main Sidebar Nav */}
       <Sidebar />
-      {children}
+      
+      <div className="flex-1 flex relative overflow-hidden h-full">
+        <SettingsDrawer />
+        {children}
+      </div>
 
       <ActiveCallScreen
         isOpen={isCallActive}

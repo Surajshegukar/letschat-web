@@ -23,10 +23,15 @@ export function ChatWindow({
   onStartAudioCall,
   onStartVideoCall,
 }: ChatWindowProps) {
-  const { inputText, setInputText, sendMessage, activeMessages, messagesEndRef } = useChatWindow(
-    activeRoomId,
-    { olivia: initialOliviaMessages }
-  );
+  const {
+    inputText,
+    setInputText,
+    sendMessage,
+    sendVoiceNote,
+    sendAttachment,
+    activeMessages,
+    messagesEndRef,
+  } = useChatWindow(activeRoomId, { olivia: initialOliviaMessages });
 
   // 1. EMPTY STATE RENDER
   if (!activeRoomId) {
@@ -66,6 +71,8 @@ export function ChatWindow({
         inputText={inputText}
         onChangeInput={setInputText}
         onSendMessage={sendMessage}
+        onSendVoiceNote={sendVoiceNote}
+        onSendAttachment={sendAttachment}
       />
     </div>
   );

@@ -9,17 +9,24 @@ import {
   Phone,
   Sun,
   Moon,
+  CircleDashed,
+  Users,
 } from "lucide-react";
 import { useSidebar } from "@/hooks/use-sidebar";
 import { SidebarHeader } from "./SidebarHeader";
 import { SidebarNavItem } from "./SidebarNavItem";
 import { SidebarFooter } from "./SidebarFooter";
+import { useAuthStore } from "@/store/auth-store";
+import { useUIStore } from "@/store/ui-store";
 
 export function Sidebar() {
   const { isCollapsed, toggleSidebar, expandSidebar } = useSidebar(true);
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
+  
+  const { user } = useAuthStore();
+  const { openProfileDrawer } = useUIStore();
 
   useEffect(() => {
     setMounted(true);
@@ -30,8 +37,10 @@ export function Sidebar() {
 
   const navItems = [
     { icon: MessageSquare, label: "Chats", count: 12, href: "/chat" },
+    { icon: CircleDashed, label: "Status", href: "/status" },
+    { icon: Radio, label: "Channels", href: "/channels" },
+    { icon: Users, label: "Communities", href: "/communities" },
     { icon: Phone, label: "Calls", count: 2, href: "/calls" },
-    { icon: Radio, label: "Channels", href: "#" },
   ];
 
   const isLinkActive = (href: string) => {
@@ -96,7 +105,13 @@ export function Sidebar() {
         </div>
       )}
 
-      <SidebarFooter isCollapsed={isCollapsed} />
+      <SidebarFooter
+        isCollapsed={isCollapsed}
+        avatarUrl={user?.avatarUrl}
+        userName={user?.username}
+        status={user?.about}
+        onClick={openProfileDrawer}
+      />
     </aside>
   );
 }

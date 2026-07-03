@@ -2,6 +2,7 @@ export interface Attachment {
   name: string;
   size: string;
   url?: string;
+  type?: "image" | "audio" | "document";
 }
 
 export interface Message {
