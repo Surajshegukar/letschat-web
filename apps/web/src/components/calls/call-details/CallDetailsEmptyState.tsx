@@ -1,42 +1,22 @@
-import { BrandLogo } from "@/components/BrandLogo";
 import React from "react";
+import { Phone } from "lucide-react";
 
 export function CallDetailsEmptyState() {
   return (
-    <div
-      className="flex-1 h-full flex flex-col bg-[#FAFAFC] dark:bg-[#09090B] select-none"
-      style={{
-        backgroundImage: "url('/assets/images/wallpaper.png')",
-        backgroundSize: "360px",
-        backgroundRepeat: "repeat",
-      }}
-    >
-      {/* Empty State Header */}
-      <div className="h-20 px-8 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
-        <div>
-          <h2 className="text-base font-bold text-slate-800 dark:text-white leading-none">
-            Call Details
-          </h2>
-          <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1.5 leading-none">
-            Select a call record to view details
-          </p>
-        </div>
+    <div className="flex-1 h-full bg-zinc-50 dark:bg-[#0c0c0e] flex flex-col items-center justify-center p-6 text-center select-none">
+      <div className="relative flex items-center justify-center h-24 w-24">
+        <div className="absolute inset-0 rounded-full border border-dashed border-[#19E68C] animate-[spin_20s_linear_infinite]" />
+        <div className="absolute inset-3 rounded-full bg-gradient-to-tr from-[#00C9FF]/10 to-[#19E68C]/10 filter blur-sm animate-pulse" />
+        <Phone className="h-9 w-9 text-emerald-500/80 dark:text-[#19E68C]/80" />
       </div>
-
-      {/* Empty State Body */}
-      <div className="flex-1 flex flex-col items-center justify-center text-center px-6 relative">
-        {/* overlay */}
-        <div className="absolute top-0 left-0 w-full h-full content-[''] bg-[#0000000f] dark:bg-[#000000] z-1"></div>
-        <BrandLogo size={80} />
-
-        <h3 className="relative z-2 text-xl font-bold text-slate-800 dark:text-white mt-3">
-          Your calls, all in one place
-        </h3>
-        <p className="relative z-2 text-sm text-zinc-500 dark:text-zinc-400 mt-2 max-w-sm">
-          Select a call record from the left to view details or start a new conversation.
-        </p>
-      </div>
+      <h3 className="mt-8 text-xl font-bold text-slate-800 dark:text-zinc-200">
+        Voice & Video Calls
+      </h3>
+      <p className="mt-2 text-sm text-zinc-450 max-w-sm">
+        Select a contact call record to view historical call logs, times, and start new media connections.
+      </p>
     </div>
   );
 }
+
 export default CallDetailsEmptyState;
