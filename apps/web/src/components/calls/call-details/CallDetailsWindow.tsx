@@ -40,7 +40,7 @@ export function CallDetailsWindow({
   return (
     <div className="flex-1 h-full flex flex-col bg-[#FAFAFC] dark:bg-[#09090B]">
       {/* Active Call Header */}
-      <div className="h-20 px-6 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
+      <div className="h-16 md:h-20 px-4 md:px-6 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
         <div className="flex items-center gap-3">
           {onClearSelection && (
             <button

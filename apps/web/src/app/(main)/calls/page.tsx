@@ -11,17 +11,18 @@ export default function CallsPage() {
 
   return (
     <>
+      <div className={`${activeCallId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        <CallsList activeCallId={activeCallId} onSelectCall={setActiveCallId} />
+      </div>
 
-      {/* Pane 2: Recents Calls list view & Create Meeting Link action */}
-      <CallsList activeCallId={activeCallId} onSelectCall={setActiveCallId} />
-
-      {/* Pane 3: Call Record detail panel or Call log empty dashboard */}
-      <CallDetailsWindow
-        activeCallId={activeCallId}
-        onClearSelection={() => setActiveCallId(null)}
-        onStartAudioCall={(name, avatar) => startCall(name, avatar, "audio")}
-        onStartVideoCall={(name, avatar) => startCall(name, avatar, "video")}
-      />
+      <div className={`${activeCallId ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        <CallDetailsWindow
+          activeCallId={activeCallId}
+          onClearSelection={() => setActiveCallId(null)}
+          onStartAudioCall={(name, avatar) => startCall(name, avatar, "audio")}
+          onStartVideoCall={(name, avatar) => startCall(name, avatar, "video")}
+        />
+      </div>
     </>
   );
 }

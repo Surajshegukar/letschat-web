@@ -1,5 +1,5 @@
 import React from "react";
-import { Radio, Check, Plus, X, Share2, Compass, Heart, ThumbsUp, Flame, Laugh, Smile } from "lucide-react";
+import { Radio, Check, Plus, X, Share2, Compass, Heart, ThumbsUp, Flame, Laugh, Smile, ArrowLeft } from "lucide-react";
 import { Channel } from "@/types/channels";
 import { ChannelUpdateBubble } from "./ChannelUpdateBubble";
 
@@ -8,6 +8,7 @@ interface ChannelDetailWindowProps {
   onClearSelection: () => void;
   onFollowToggle: (channelId: string) => void;
   onReactToStory: (channelId: string, storyId: string, emoji: string) => void;
+  showBack?: boolean;
 }
 
 const EMOJIS = ["❤️", "👍", "🔥", "😂", "😮", "🙏"];
@@ -17,6 +18,7 @@ export function ChannelDetailWindow({
   onClearSelection,
   onFollowToggle,
   onReactToStory,
+  showBack,
 }: ChannelDetailWindowProps) {
   if (!activeChannel) {
     /* 1. EMPTY STATE */
@@ -46,8 +48,16 @@ export function ChannelDetailWindow({
     <div className="flex-1 h-full bg-zinc-50 dark:bg-[#0c0c0e] flex flex-col justify-between relative overflow-hidden select-none">
       
       {/* 2. Top Header Bar */}
-      <div className="h-20 px-6 border-b border-zinc-200/80 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between flex-shrink-0 z-10">
-        <div className="flex items-center gap-3.5 min-w-0">
+      <div className="h-16 md:h-20 px-4 md:px-6 border-b border-zinc-200/80 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between flex-shrink-0 z-10">
+        <div className="flex items-center gap-2 md:gap-3.5 min-w-0">
+          {showBack && (
+            <button
+              onClick={onClearSelection}
+              className="md:hidden p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition text-zinc-500 -ml-1 flex-shrink-0"
+            >
+              <ArrowLeft className="h-5 w-5" />
+            </button>
+          )}
           <img
             src={activeChannel.avatar}
             className="h-11 w-11 rounded-full object-cover border border-zinc-200 dark:border-zinc-800 flex-shrink-0"

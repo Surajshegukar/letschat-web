@@ -1,19 +1,13 @@
-import { useState, useEffect, useMemo } from "react";
-import { Community, CommunityGroup, GroupMessage } from "@/types/communities";
-import { communitiesService } from "@/services/communities-service";
+import { useMemo } from "react";
+import { useCommunitiesStore } from "@/store/communities-store";
 
 export function useCommunities() {
-  const [communities, setCommunities] = useState<Community[]>([]);
-  const [groupMessages, setGroupMessages] = useState<Record<string, GroupMessage[]>>({});
-  
-  const [activeCommunityId, setActiveCommunityId] = useState<string | null>(null);
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(null);
-
-  // Load initial communities and messages from services
-  useEffect(() => {
-    communitiesService.getCommunities().then(setCommunities);
-    communitiesService.getMessages().then(setGroupMessages);
-  }, []);
+  const communities = useCommunitiesStore((state) => state.communities);
+  const groupMessages = useCommunitiesStore((state) => state.groupMessages);
+  const activeCommunityId = useCommunitiesStore((state) => state.activeCommunityId);
+  const activeGroupId = useCommunitiesStore((state) => state.activeGroupId);
+  const selectGroup = useCommunitiesStore((state) => state.selectGroup);
+  const sendMessageToGroup = useCommunitiesStore((state) => state.sendMessageToGroup);
 
   const activeCommunity = useMemo(() => {
     return communities.find((c) => c.id === activeCommunityId) || null;
@@ -25,54 +19,11 @@ export function useCommunities() {
   }, [activeGroupId, activeCommunity]);
 
   const handleSelectGroup = (communityId: string, groupId: string | null) => {
-    setActiveCommunityId(communityId);
-    setActiveGroupId(groupId);
-
-    if (groupId) {
-      setCommunities((prev) =>
-        prev.map((c) => {
-          if (c.id === communityId) {
-            return {
-              ...c,
-              groups: c.groups.map((g) => (g.id === groupId ? { ...g, unreadCount: 0 } : g)),
-            };
-          }
-          return c;
-        })
-      );
-    }
+    selectGroup(communityId, groupId);
   };
 
   const handleSendMessageToGroup = (communityId: string, groupId: string, text: string) => {
-    communitiesService.sendMessage(text).then((newMessage) => {
-      // Append message to logs
-      setGroupMessages((prev) => ({
-        ...prev,
-        [groupId]: [...(prev[groupId] || []), newMessage],
-      }));
-
-      // Update communities sidebar listings info
-      setCommunities((prev) =>
-        prev.map((c) => {
-          if (c.id === communityId) {
-            return {
-              ...c,
-              groups: c.groups.map((g) => {
-                if (g.id === groupId) {
-                  return {
-                    ...g,
-                    lastMessage: `You: ${text}`,
-                    timestamp: "Just now",
-                  };
-                }
-                return g;
-              }),
-            };
-          }
-          return c;
-        })
-      );
-    });
+    sendMessageToGroup(communityId, groupId, text);
   };
 
   return {
@@ -86,4 +37,5 @@ export function useCommunities() {
     handleSendMessageToGroup,
   };
 }
+
 export default useCommunities;

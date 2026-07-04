@@ -19,25 +19,26 @@ export default function CommunitiesPage() {
 
   return (
     <>
-      {/* Pane 2: Communities Organization Directories */}
-      <CommunitiesList
-        communities={communities}
-        activeCommunityId={activeCommunityId}
-        activeGroupId={activeGroupId}
-        onSelectGroup={handleSelectGroup}
-      />
+      <div className={`${activeCommunityId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        <CommunitiesList
+          communities={communities}
+          activeCommunityId={activeCommunityId}
+          activeGroupId={activeGroupId}
+          onSelectGroup={handleSelectGroup}
+        />
+      </div>
 
-      {/* Pane 3: Community Homepage or Subgroup Chat dialogue */}
-      <CommunityDetailWindow
-        activeCommunity={activeCommunity}
-        activeGroup={activeGroup}
-        onClearSelection={() => {
-          handleSelectGroup("", null);
-        }}
-        onSendMessageToGroup={handleSendMessageToGroup}
-        groupMessages={groupMessages}
-        onSelectGroup={handleSelectGroup}
-      />
+      <div className={`${activeCommunityId ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        <CommunityDetailWindow
+          activeCommunity={activeCommunity}
+          activeGroup={activeGroup}
+          onClearSelection={() => handleSelectGroup("", null)}
+          onSendMessageToGroup={handleSendMessageToGroup}
+          groupMessages={groupMessages}
+          onSelectGroup={handleSelectGroup}
+          showBack={!!activeCommunityId}
+        />
+      </div>
     </>
   );
 }

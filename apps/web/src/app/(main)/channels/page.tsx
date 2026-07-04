@@ -17,21 +17,24 @@ export default function ChannelsPage() {
 
   return (
     <>
-      {/* Pane 2: Channels Navigation List */}
-      <ChannelsList
-        channels={channels}
-        activeChannelId={activeChannelId}
-        onSelectChannel={setActiveChannelId}
-        onFollowToggle={handleFollowToggle}
-      />
+      <div className={`${activeChannelId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        <ChannelsList
+          channels={channels}
+          activeChannelId={activeChannelId}
+          onSelectChannel={setActiveChannelId}
+          onFollowToggle={handleFollowToggle}
+        />
+      </div>
 
-      {/* Pane 3: Channel Stream Dialogue Area */}
-      <ChannelDetailWindow
-        activeChannel={activeChannel}
-        onClearSelection={() => setActiveChannelId(null)}
-        onFollowToggle={handleFollowToggle}
-        onReactToStory={handleReactToStory}
-      />
+      <div className={`${activeChannelId ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        <ChannelDetailWindow
+          activeChannel={activeChannel}
+          onClearSelection={() => setActiveChannelId(null)}
+          onFollowToggle={handleFollowToggle}
+          onReactToStory={handleReactToStory}
+          showBack={!!activeChannelId}
+        />
+      </div>
     </>
   );
 }

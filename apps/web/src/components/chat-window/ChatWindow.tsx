@@ -14,6 +14,7 @@ interface ChatWindowProps {
   isDetailsOpen: boolean;
   onStartAudioCall?: (name: string, avatarUrl?: string) => void;
   onStartVideoCall?: (name: string, avatarUrl?: string) => void;
+  onBack?: () => void;
 }
 
 export function ChatWindow({
@@ -22,6 +23,7 @@ export function ChatWindow({
   isDetailsOpen,
   onStartAudioCall,
   onStartVideoCall,
+  onBack,
 }: ChatWindowProps) {
   const {
     inputText,
@@ -57,6 +59,7 @@ export function ChatWindow({
         onToggleDetails={onToggleDetails}
         onStartAudioCall={onStartAudioCall ? () => onStartAudioCall(roomName, avatarUrl) : undefined}
         onStartVideoCall={onStartVideoCall ? () => onStartVideoCall(roomName, avatarUrl) : undefined}
+        onBack={onBack}
       />
 
       <MessageFeed

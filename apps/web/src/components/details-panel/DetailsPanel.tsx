@@ -22,7 +22,7 @@ export function DetailsPanel({ activeRoomId, onClose, onOpenMedia }: DetailsPane
   const status = room ? (room.isOnline ? "Online" : "Offline") : "Online";
 
   return (
-    <div className="w-80 h-full flex flex-col border-l border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 select-none">
+    <div className="fixed inset-0 z-40 md:static md:z-auto md:w-80 md:h-full md:flex-shrink-0 flex flex-col border-l border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 select-none">
       <DetailsHeader onClose={onClose} />
 
       {/* Body Content */}

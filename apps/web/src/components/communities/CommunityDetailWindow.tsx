@@ -11,6 +11,7 @@ interface CommunityDetailWindowProps {
   onSendMessageToGroup: (communityId: string, groupId: string, text: string) => void;
   groupMessages: Record<string, GroupMessage[]>;
   onSelectGroup: (communityId: string, groupId: string | null) => void;
+  showBack?: boolean;
 }
 
 export function CommunityDetailWindow({
@@ -20,6 +21,7 @@ export function CommunityDetailWindow({
   onSendMessageToGroup,
   groupMessages,
   onSelectGroup,
+  showBack,
 }: CommunityDetailWindowProps) {
   if (!activeCommunity) {
     /* 1. EMPTY STATE */
@@ -49,6 +51,7 @@ export function CommunityDetailWindow({
           activeCommunity={activeCommunity}
           onClearSelection={onClearSelection}
           onSelectGroup={onSelectGroup}
+          showBack={showBack}
         />
       ) : (
         <CommunityChatWindow

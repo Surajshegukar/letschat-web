@@ -6,21 +6,23 @@ import { ChatWindow } from "@/components/chat-window/ChatWindow";
 import { useCallStore } from "@/store/call-store";
 import { DetailsPanel } from "@/components/details-panel/DetailsPanel";
 import { MediaModal } from "@/components/details-panel/media-modal/MediaModal";
-import { mockRooms } from "@/constants/mock-data";
+import { useChatStore } from "@/store/chat-store";
 
 export default function ChatPage() {
-  const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-  const [isDetailsOpen, setIsDetailsOpen] = useState(true);
+  const activeRoomId = useChatStore((state) => state.activeRoomId);
+  const setActiveRoomId = useChatStore((state) => state.setActiveRoomId);
+  const rooms = useChatStore((state) => state.rooms);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const { startCall } = useCallStore();
 
-  const activeRoom = mockRooms.find((r) => r.id === activeRoomId);
+  const activeRoom = rooms.find((r) => r.id === activeRoomId);
   const roomName = activeRoom ? activeRoom.name : "Chat Room";
 
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId);
     // Auto-open details panel if a chat is selected to mirror design
-    setIsDetailsOpen(true);
+    // setIsDetailsOpen(true);
   };
 
   const handleToggleDetails = () => {
@@ -29,23 +31,27 @@ export default function ChatPage() {
 
   return (
     <>
+      {/* Pane 2: Chat list — hidden on mobile when a room is selected */}
+      <div className={`${activeRoomId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        <ChatList
+          activeRoomId={activeRoomId}
+          onSelectRoom={handleSelectRoom}
+        />
+      </div>
 
-      {/* Pane 2: Chats list filter categories and conversation scroll feed */}
-      <ChatList 
-        activeRoomId={activeRoomId} 
-        onSelectRoom={handleSelectRoom} 
-      />
+      {/* Pane 3: Chat window — hidden on mobile when no room selected */}
+      <div className={`${activeRoomId ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        <ChatWindow
+          activeRoomId={activeRoomId}
+          onToggleDetails={handleToggleDetails}
+          isDetailsOpen={isDetailsOpen}
+          onStartAudioCall={(name, avatar) => startCall(name, avatar, "audio")}
+          onStartVideoCall={(name, avatar) => startCall(name, avatar, "video")}
+          onBack={() => setActiveRoomId(null)}
+        />
+      </div>
 
-      {/* Pane 3: Chat Conversation Area or Empty State welcome loader */}
-      <ChatWindow 
-        activeRoomId={activeRoomId} 
-        onToggleDetails={handleToggleDetails}
-        isDetailsOpen={isDetailsOpen}
-        onStartAudioCall={(name, avatar) => startCall(name, avatar, "audio")}
-        onStartVideoCall={(name, avatar) => startCall(name, avatar, "video")}
-      />
-
-      {/* Pane 4: Details Panel side menu, visible when toggled and chat is active */}
+      {/* Pane 4: Details Panel */}
       {isDetailsOpen && activeRoomId && (
         <DetailsPanel
           activeRoomId={activeRoomId}

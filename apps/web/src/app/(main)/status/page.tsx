@@ -26,26 +26,27 @@ export default function StatusPage() {
 
   return (
     <>
-      {/* Pane 2: List of Status updates */}
-      <StatusList
-        statuses={statuses}
-        activeUserId={activeUserId}
-        onSelectUser={setActiveUserId}
-        myStatus={myStatus}
-        onCreateTextStatus={triggerCreateText}
-        onCreateImageStatus={triggerCreateImage}
-      />
+      <div className={`${activeUserId ? "hidden md:flex" : "flex"} w-full md:w-auto`}>
+        <StatusList
+          statuses={statuses}
+          activeUserId={activeUserId}
+          onSelectUser={setActiveUserId}
+          myStatus={myStatus}
+          onCreateTextStatus={triggerCreateText}
+          onCreateImageStatus={triggerCreateImage}
+        />
+      </div>
 
-      {/* Pane 3: Immersive viewer panel */}
-      <StatusDetailWindow
-        activeUserStatus={activeUserStatus}
-        onClearSelection={() => setActiveUserId(null)}
-        onNextUserStatus={handleNextUserStatus}
-        onPrevUserStatus={handlePrevUserStatus}
-        onMarkRead={handleMarkRead}
-      />
+      <div className={`${activeUserId ? "flex" : "hidden md:flex"} flex-1 min-w-0`}>
+        <StatusDetailWindow
+          activeUserStatus={activeUserStatus}
+          onClearSelection={() => setActiveUserId(null)}
+          onNextUserStatus={handleNextUserStatus}
+          onPrevUserStatus={handlePrevUserStatus}
+          onMarkRead={handleMarkRead}
+        />
+      </div>
 
-      {/* Modal for creating a new status update */}
       <StatusCreatorModal
         isOpen={isCreatorOpen}
         onClose={() => setIsCreatorOpen(false)}

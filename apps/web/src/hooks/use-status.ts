@@ -1,27 +1,17 @@
-import { useState, useEffect, useMemo } from "react";
-import { UserStatus, StatusStory } from "@/types/status";
-import { statusService } from "@/services/status-service";
+import { useState, useMemo } from "react";
+import { UserStatus } from "@/types/status";
+import { useStatusStore } from "@/store/status-store";
 
 export function useStatus() {
-  const [statuses, setStatuses] = useState<UserStatus[]>([]);
-  const [myStatus, setMyStatus] = useState<UserStatus | null>({
-    id: "me",
-    userId: "me",
-    userName: "My Status",
-    userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-    stories: [],
-    lastUpdated: "Never",
-    hasUnread: false,
-  });
+  const statuses = useStatusStore((state) => state.statuses);
+  const myStatus = useStatusStore((state) => state.myStatus);
+  const activeUserId = useStatusStore((state) => state.activeUserId);
+  const setActiveUserId = useStatusStore((state) => state.setActiveUserId);
+  const markRead = useStatusStore((state) => state.markRead);
+  const publishStatus = useStatusStore((state) => state.publishStatus);
 
-  const [activeUserId, setActiveUserId] = useState<string | null>(null);
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [defaultCreatorType, setDefaultCreatorType] = useState<"text" | "image">("text");
-
-  // Load initial statuses from statusService
-  useEffect(() => {
-    statusService.getStatuses().then(setStatuses);
-  }, []);
 
   const activeUserStatus = useMemo(() => {
     if (activeUserId === "me") return myStatus;
@@ -68,10 +58,7 @@ export function useStatus() {
   };
 
   const handleMarkRead = (userId: string) => {
-    if (userId === "me") return;
-    setStatuses((prev) =>
-      prev.map((s) => (s.userId === userId ? { ...s, hasUnread: false } : s))
-    );
+    markRead(userId);
   };
 
   const handlePublishStatus = (newStoryData: {
@@ -81,20 +68,7 @@ export function useStatus() {
     fontFamily?: string;
     caption?: string;
   }) => {
-    statusService.publishStatus(newStoryData).then((newStory) => {
-      setMyStatus((prev) => {
-        const updatedStories = prev ? [...prev.stories, newStory] : [newStory];
-        return {
-          id: "me",
-          userId: "me",
-          userName: "John Doe",
-          userAvatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
-          stories: updatedStories,
-          lastUpdated: "Just now",
-          hasUnread: false,
-        };
-      });
-    });
+    publishStatus(newStoryData);
   };
 
   const triggerCreateText = () => {
@@ -125,4 +99,5 @@ export function useStatus() {
     triggerCreateImage,
   };
 }
+
 export default useStatus;

@@ -87,6 +87,12 @@
   background: rgba(0, 0, 0, 0.2);
 }
 
+@layer utilities {
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* Custom Scrollbar for chat messages */
 ::-webkit-scrollbar {
   width: 6px;

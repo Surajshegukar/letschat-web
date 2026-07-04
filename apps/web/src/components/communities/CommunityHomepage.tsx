@@ -1,17 +1,19 @@
 import React from "react";
-import { Megaphone, MessageSquare, UserPlus, X } from "lucide-react";
+import { Megaphone, MessageSquare, UserPlus, X, ArrowLeft } from "lucide-react";
 import { Community } from "@/types/communities";
 
 interface CommunityHomepageProps {
   activeCommunity: Community;
   onClearSelection: () => void;
   onSelectGroup: (communityId: string, groupId: string | null) => void;
+  showBack?: boolean;
 }
 
 export function CommunityHomepage({
   activeCommunity,
   onClearSelection,
   onSelectGroup,
+  showBack,
 }: CommunityHomepageProps) {
   return (
     <div className="flex-1 overflow-y-auto flex flex-col items-center select-none">
@@ -22,10 +24,16 @@ export function CommunityHomepage({
           alt="Community Banner"
           className="w-full h-full object-cover opacity-85 dark:opacity-75"
         />
-        {/* Close button overlay */}
+        {/* Back button on mobile, close on desktop */}
         <button
           onClick={onClearSelection}
-          className="absolute top-4 right-4 p-2 bg-black/40 text-white rounded-full hover:bg-black/60 transition"
+          className="absolute top-4 left-4 md:hidden p-2 bg-black/40 text-white rounded-full hover:bg-black/60 transition"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </button>
+        <button
+          onClick={onClearSelection}
+          className="absolute top-4 right-4 hidden md:flex p-2 bg-black/40 text-white rounded-full hover:bg-black/60 transition"
         >
           <X className="h-4.5 w-4.5" />
         </button>

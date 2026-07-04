@@ -38,7 +38,7 @@ export function CommunityChatWindow({
   return (
     <>
       {/* Subgroup Header */}
-      <div className="h-20 px-6 border-b border-zinc-200/80 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between flex-shrink-0 z-10">
+      <div className="h-16 md:h-20 px-4 md:px-6 border-b border-zinc-200/80 dark:border-zinc-900 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md flex items-center justify-between flex-shrink-0 z-10">
         <div className="flex items-center gap-3.5 min-w-0">
           <div className="p-2.5 rounded-xl bg-zinc-100 dark:bg-zinc-900 text-zinc-500 dark:text-zinc-400 flex-shrink-0">
             {activeGroup.type === "announcement" ? <Megaphone className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}

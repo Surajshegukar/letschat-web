@@ -1,5 +1,5 @@
-  import React from "react";
-import { Search, Phone, Video, Info } from "lucide-react";
+import React from "react";
+import { Search, Phone, Video, Info, ArrowLeft } from "lucide-react";
 
 interface ChatHeaderProps {
   roomName: string;
@@ -10,6 +10,7 @@ interface ChatHeaderProps {
   onToggleDetails: () => void;
   onStartAudioCall?: () => void;
   onStartVideoCall?: () => void;
+  onBack?: () => void;
 }
 
 export function ChatHeader({
@@ -21,10 +22,19 @@ export function ChatHeader({
   onToggleDetails,
   onStartAudioCall,
   onStartVideoCall,
+  onBack,
 }: ChatHeaderProps) {
   return (
-    <div className="h-20 px-8 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
-      <div className="flex items-center gap-3">
+    <div className="h-16 md:h-20 px-4 md:px-8 border-b border-zinc-200/80 dark:border-zinc-900 flex items-center justify-between bg-white dark:bg-zinc-950 flex-shrink-0">
+      <div className="flex items-center gap-2 md:gap-3">
+        {onBack && (
+          <button
+            onClick={onBack}
+            className="md:hidden p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition text-zinc-500 -ml-1"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <div className="relative">
           {isGroup ? (
             <div className="h-10 w-10 rounded-full bg-[#19E68C]/15 text-emerald-650 flex items-center justify-center font-bold text-sm dark:bg-[#19E68C]/10 dark:text-[#19E68C]">

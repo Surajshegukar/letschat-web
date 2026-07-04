@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { mockRooms } from "@/constants/mock-data";
+import { useChatStore } from "@/store/chat-store";
 import { useChatList } from "@/hooks/use-chat-list";
 import { ChatFilterPills } from "./ChatFilterPills";
 import { ChatRoomItem } from "./ChatRoomItem";
@@ -12,19 +12,20 @@ interface ChatListProps {
 }
 
 export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
-  const { activeFilter, setActiveFilter, filteredRooms } = useChatList(mockRooms);
+  const rooms = useChatStore((state) => state.rooms);
+  const { activeFilter, setActiveFilter, filteredRooms } = useChatList(rooms);
 
   // Count types for filter pills
-  const allCount = mockRooms.filter((r) => !r.isArchived).length;
-  const unreadCount = mockRooms.filter((r) => !r.isArchived && r.unreadCount && r.unreadCount > 0).length;
-  const directCount = mockRooms.filter((r) => !r.isArchived && r.type === "direct").length;
-  const groupsCount = mockRooms.filter((r) => !r.isArchived && r.type === "group").length;
-  const mentionsCount = mockRooms.filter((r) => !r.isArchived && r.hasMention).length;
-  const pinnedCount = mockRooms.filter((r) => !r.isArchived && r.isPinned).length;
-  const archiveCount = mockRooms.filter((r) => r.isArchived).length;
+  const allCount = rooms.filter((r) => !r.isArchived).length;
+  const unreadCount = rooms.filter((r) => !r.isArchived && r.unreadCount && r.unreadCount > 0).length;
+  const directCount = rooms.filter((r) => !r.isArchived && r.type === "direct").length;
+  const groupsCount = rooms.filter((r) => !r.isArchived && r.type === "group").length;
+  const mentionsCount = rooms.filter((r) => !r.isArchived && r.hasMention).length;
+  const pinnedCount = rooms.filter((r) => !r.isArchived && r.isPinned).length;
+  const archiveCount = rooms.filter((r) => r.isArchived).length;
 
   return (
-    <div className="w-100 max-w-[430px] h-full flex flex-col border-r border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 select-none">
+    <div className="w-full md:w-100 md:max-w-[430px] h-full flex flex-col border-r border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 select-none">
       {/* Filter pills */}
       <ChatFilterPills
         activeFilter={activeFilter}
