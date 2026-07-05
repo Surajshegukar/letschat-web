@@ -28,9 +28,7 @@ build
 dist
 docs
 .ai
-.env
-.env.dev
-.env.production
+
 
 # Debug
 npm-debug.log*
