@@ -13,21 +13,21 @@ import {
 const router = Router();
 
 // Registration & Verification
-router.post("/register", validate(registerSchema), authController.register.bind(authController));
-router.get("/verify/:token", authController.verifyEmail.bind(authController));
-router.get("/verify", authController.verifyEmail.bind(authController)); // Fallback query param support
+router.post("/register", validate(registerSchema), authController.register);
+router.get("/verify/:token", authController.verifyEmail);
+router.get("/verify", authController.verifyEmail);
 
 // Login, Refresh & Logout
-router.post("/login", validate(loginSchema), authController.login.bind(authController));
-router.post("/refresh", authController.refresh.bind(authController));
-router.post("/logout", authenticateJWT, authController.logout.bind(authController));
+router.post("/login", validate(loginSchema), authController.login);
+router.post("/refresh", authController.refresh);
+router.post("/logout", authenticateJWT, authController.logout);
 
-// OAuth Endpoints
-router.get("/oauth/url/:provider", authController.getOAuthUrl.bind(authController));
-router.post("/oauth/callback", validate(oauthCallbackSchema), authController.handleOAuthCallback.bind(authController));
+// OAuth
+router.get("/oauth/url/:provider", authController.getOAuthUrl);
+router.post("/oauth/callback", validate(oauthCallbackSchema), authController.handleOAuthCallback);
 
 // Password Recovery
-router.post("/forgot-password", validate(forgotPasswordSchema), authController.forgotPassword.bind(authController));
-router.post("/reset-password", validate(resetPasswordSchema), authController.resetPassword.bind(authController));
+router.post("/forgot-password", validate(forgotPasswordSchema), authController.forgotPassword);
+router.post("/reset-password", validate(resetPasswordSchema), authController.resetPassword);
 
 export default router;

@@ -5,31 +5,18 @@ export class UserController {
   /**
    * Get the current authenticated user's profile.
    */
-  async getMe(req: Request, res: Response, next: NextFunction): Promise<void> {
+  getMe = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ message: "Not authenticated" });
-        return;
-      }
-
-      const user = await userRepository.findById(userId);
+      const user = await userRepository.findById(req.user!.id);
       if (!user) {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({ status: "error", statusCode: 404, message: "User not found" });
         return;
       }
-
-      res.status(200).json({
-        status: "success",
-        statusCode: 200,
-        data: {
-          user,
-        },
-      });
+      res.status(200).json({ status: "success", statusCode: 200, data: { user } });
     } catch (error) {
       next(error);
     }
-  }
+  };
 }
 
 export const userController = new UserController();

@@ -4,7 +4,6 @@ import { authenticateJWT } from "@/middlewares/auth";
 
 const router = Router();
 
-// Protected profile route
-router.get("/me", authenticateJWT, userController.getMe.bind(userController));
+router.get("/me", authenticateJWT, userController.getMe);
 
 export default router;
