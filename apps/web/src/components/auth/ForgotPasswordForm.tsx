@@ -1,9 +1,19 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { Input, Button } from "@/components/ui";
+import { useForgotPassword } from "@/hooks/api/use-auth";
 
 export default function ForgotPasswordForm() {
+    const [email, setEmail] = useState("");
+    const forgotPasswordMutation = useForgotPassword();
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        forgotPasswordMutation.mutate(email);
+    };
+
     return (
         <section className="flex items-center justify-center p-4 sm:p-8 bg-[#FAFAFC] dark:bg-[#09090B] min-h-screen">
             <div className="w-full max-w-lg rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-10 shadow-xl dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:backdrop-blur-md">
@@ -16,12 +26,14 @@ export default function ForgotPasswordForm() {
                     Enter your email address and we'll send you a secure link to reset your password.
                 </p>
 
-                <form className="mt-8 space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="mt-8 space-y-5" onSubmit={handleSubmit}>
                     <div>
                         <Input
                             type="email"
                             label="Email Address"
                             placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
@@ -30,8 +42,9 @@ export default function ForgotPasswordForm() {
                         type="submit"
                         variant="primary"
                         className="w-full h-12 font-bold uppercase tracking-wider text-sm"
+                        disabled={forgotPasswordMutation.isPending}
                     >
-                        Send Reset Link
+                        {forgotPasswordMutation.isPending ? "Sending..." : "Send Reset Link"}
                     </Button>
                 </form>
 

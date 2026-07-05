@@ -13,7 +13,15 @@ const envSchema = z.object({
   MONGO_URI: z.string().url("MONGO_URI must be a valid MongoDB connection string"),
   JWT_SECRET: z.string().min(8, "JWT_SECRET must be at least 8 characters"),
   JWT_EXPIRES_IN: z.string().default("7d"),
+  JWT_REFRESH_SECRET: z.string().min(8, "JWT_REFRESH_SECRET must be at least 8 characters"),
+  CLIENT_URL: z.string().url("CLIENT_URL must be a valid client URL").default("http://localhost:3000"),
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
+  RESEND_API_KEY: z.string().default("re_dev_placeholder"),
+  EMAIL_FROM: z.string().default("onboarding@resend.dev"),
+  GOOGLE_CLIENT_ID: z.string().default("google_client_id_placeholder"),
+  GOOGLE_CLIENT_SECRET: z.string().default("google_client_secret_placeholder"),
+  GITHUB_CLIENT_ID: z.string().default("github_client_id_placeholder"),
+  GITHUB_CLIENT_SECRET: z.string().default("github_client_secret_placeholder"),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -24,3 +32,4 @@ if (!parsed.success) {
 }
 
 export const env = parsed.data;
+

@@ -21,7 +21,7 @@ setupSocketHandlers(io);
 
 async function startServer() {
   // Connect to database
-  // await connectDatabase();
+  await connectDatabase();
 
   const PORT = env.PORT;
   server.listen(PORT, () => {

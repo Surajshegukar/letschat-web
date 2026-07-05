@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "../styles/globals.css";
 import { ThemeProvider } from "@/providers/theme-provider";
 import { QueryProvider } from "@/providers/query-provider";
+import { AuthProvider } from "@/providers/auth-provider";
 import { SocketProvider } from "@/providers/socket-provider";
 import { ToastProvider } from "@/providers/toast-provider";
 
@@ -32,10 +33,12 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <QueryProvider>
-            <SocketProvider>
-              {children}
-              <ToastProvider />
-            </SocketProvider>
+            <AuthProvider>
+              <SocketProvider>
+                {children}
+                <ToastProvider />
+              </SocketProvider>
+            </AuthProvider>
           </QueryProvider>
         </ThemeProvider>
       </body>

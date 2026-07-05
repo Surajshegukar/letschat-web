@@ -1,10 +1,22 @@
 "use client";
 
+import React, { useState } from "react";
 import Link from "next/link";
 import { Input, Button, Checkbox, Divider } from "@/components/ui";
 import SocialLogin from "./SocialLogin";
+import { useRegister } from "@/hooks/api/use-auth";
 
 export default function SignUpForm() {
+    const [username, setUsername] = useState("");
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const registerMutation = useRegister();
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        registerMutation.mutate({ username, email, password });
+    };
+
     return (
         <section className="flex items-center justify-center p-4 sm:p-8 bg-[#FAFAFC] dark:bg-[#09090B] min-h-screen">
             <div className="w-full max-w-lg rounded-3xl border border-zinc-200/80 bg-white p-6 sm:p-10 shadow-xl dark:border-zinc-800/80 dark:bg-zinc-900/50 dark:backdrop-blur-md">
@@ -25,12 +37,14 @@ export default function SignUpForm() {
                     <Divider />
                 </div>
 
-                <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+                <form className="space-y-5" onSubmit={handleSubmit}>
                     <div>
                         <Input
                             type="text"
                             label="Username"
                             placeholder="johndoe"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
                             required
                         />
                     </div>
@@ -40,6 +54,8 @@ export default function SignUpForm() {
                             type="email"
                             label="Email Address"
                             placeholder="name@example.com"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                             required
                         />
                     </div>
@@ -49,6 +65,8 @@ export default function SignUpForm() {
                             type="password"
                             label="Password"
                             placeholder="••••••••"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                             required
                         />
                     </div>
@@ -66,8 +84,9 @@ export default function SignUpForm() {
                         type="submit"
                         variant="primary"
                         className="w-full h-12 font-bold uppercase tracking-wider text-sm"
+                        disabled={registerMutation.isPending}
                     >
-                        Sign Up
+                        {registerMutation.isPending ? "Creating..." : "Sign Up"}
                     </Button>
                 </form>
 

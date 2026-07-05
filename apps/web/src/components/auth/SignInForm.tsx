@@ -2,19 +2,19 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { Input, Button, Checkbox, Divider } from "@/components/ui";
 import SocialLogin from "./SocialLogin";
 import { BrandLogo } from "../BrandLogo";
+import { useLogin } from "@/hooks/api/use-auth";
 
 export default function SignInForm() {
-    const [email, setEmail] = useState("admin@letschat.com");
-    const [password, setPassword] = useState("password123");
-    const router = useRouter();
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const loginMutation = useLogin();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        router.push("/chat");
+        loginMutation.mutate({ email, password });
     };
 
     return (
@@ -83,8 +83,9 @@ export default function SignInForm() {
                         type="submit"
                         variant="primary"
                         className="w-full h-12 font-bold uppercase tracking-wider text-sm"
+                        disabled={loginMutation.isPending}
                     >
-                        Sign In
+                        {loginMutation.isPending ? "Signing In..." : "Sign In"}
                     </Button>
                 </form>
                 <div className="flex justify-center">

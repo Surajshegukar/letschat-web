@@ -5,10 +5,11 @@ import compression from "compression";
 import cookieParser from "cookie-parser";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
-import jwt from "jsonwebtoken";
 import { env } from "@/config/env";
 import { globalErrorHandler } from "@/middlewares/error";
 import { authenticateJWT } from "@/middlewares/auth";
+import authRoutes from "@/routes/auth.routes";
+import userRoutes from "@/routes/user.routes";
 
 const app = express();
 
@@ -50,27 +51,12 @@ const apiLimiter = rateLimit({
 });
 app.use("/api/", apiLimiter);
 
-// Auth routes for generating tokens
-app.post("/api/auth/login", (req, res) => {
-  const { email, password } = req.body;
+// Mount Auth Routes
+app.use("/api/auth", authRoutes);
 
-  // Simple hardcoded login for demo/testing
-  if (email && password) {
-    const username = email.split("@")[0] || "user";
-    const payload = { id: "u-" + Date.now(), username, email };
-    const token = jwt.sign(payload, env.JWT_SECRET, {
-      expiresIn: env.JWT_EXPIRES_IN as any,
-    });
-    res.json({ token, user: payload });
-  } else {
-    res.status(400).json({ message: "Email and password are required" });
-  }
-});
+// Mount User Routes
+app.use("/api/users", userRoutes);
 
-// Protected profile route
-app.get("/api/auth/me", authenticateJWT, (req, res) => {
-  res.json({ user: req.user });
-});
 
 // Health check route
 app.get("/health", (req, res) => {

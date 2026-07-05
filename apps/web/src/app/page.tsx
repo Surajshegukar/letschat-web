@@ -10,15 +10,22 @@ import { BrandLogo } from "@/components/BrandLogo";
 import { ProgressBar } from "@/components/ProgressBar";
 import { EncryptionNotice } from "@/components/EncryptionNotice";
 
+import { useAuthStore } from "@/store/auth-store";
+
 export default function Home() {
   const { mounted, loadingProgress } = useSplashLoading();
+  const token = useAuthStore((state) => state.token);
   const router = useRouter();
 
   React.useEffect(() => {
     if (loadingProgress >= 100) {
-      router.push("/sign-in");
+      if (token) {
+        router.push("/chat");
+      } else {
+        router.push("/sign-in");
+      }
     }
-  }, [loadingProgress, router]);
+  }, [loadingProgress, token, router]);
 
   if (!mounted) return null;
 

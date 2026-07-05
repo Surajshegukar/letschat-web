@@ -5,6 +5,9 @@ import { useChatStore } from "@/store/chat-store";
 import { useChatList } from "@/hooks/use-chat-list";
 import { ChatFilterPills } from "./ChatFilterPills";
 import { ChatRoomItem } from "./ChatRoomItem";
+import { ChevronLeft, Search } from "lucide-react";
+import { BrandLogo } from "../BrandLogo";
+import ChatListHeader from "./ChatListHeader";
 
 interface ChatListProps {
   activeRoomId: string | null;
@@ -26,6 +29,7 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
 
   return (
     <div className="w-full md:w-100 md:max-w-[430px] h-full flex flex-col border-r border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 select-none">
+      <ChatListHeader />
       {/* Filter pills */}
       <ChatFilterPills
         activeFilter={activeFilter}
