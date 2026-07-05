@@ -1,0 +1,91 @@
+# TASKS.md — Active Task Tracker
+
+Track all in-progress and upcoming work here. Update this file when starting or completing a task.
+
+---
+
+## 🔴 In Progress
+
+### Phase 2.1 — Backend: User Profile API
+- [ ] `apps/api/src/validators/user.validator.ts` — updateProfileSchema, changePasswordSchema
+- [ ] `apps/api/src/services/user.service.ts` — getProfile, updateProfile, changePassword, searchUsers, deleteAccount
+- [ ] `apps/api/src/controllers/user.controller.ts` — expand beyond current getMe stub (updateMe, changePassword, searchUsers, deleteAccount)
+- [ ] `apps/api/src/routes/user.routes.ts` — PATCH /me, PATCH /me/password, GET /search, DELETE /me
+
+---
+
+## 🟡 Up Next
+
+### Phase 2.2 — Backend: Avatar Upload
+- [ ] Install: `multer`, `sharp`, `@aws-sdk/client-s3` (or `cloudinary`)
+- [ ] `apps/api/src/config/storage.ts` — S3/Cloudinary client
+- [ ] `apps/api/src/middlewares/upload.ts` — Multer memoryStorage, file filter, size limits
+- [ ] `apps/api/src/services/upload.service.ts` — processAndUploadAvatar, processAndUploadMedia
+- [ ] `POST /api/users/me/avatar` route
+
+### Phase 2.3 — Frontend: Connect Profile & Settings to API
+- [ ] `apps/web/src/services/user-service.ts`
+- [ ] `apps/web/src/hooks/api/use-user.ts` — useCurrentUser, useUpdateProfile, useUploadAvatar, useChangePassword
+- [ ] Connect SettingsProfileView, SettingsAccountView to real API
+- [ ] Avatar upload in SettingsDrawer
+
+---
+
+## ✅ Completed
+
+### Phase 1 — Authentication & Authorization (COMPLETE)
+- [x] `apps/api/src/models/User.ts` — full schema with bcrypt pre-save, comparePassword, toJSON sanitization
+- [x] `apps/api/src/validators/auth.validator.ts` — registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, oauthCallbackSchema
+- [x] `apps/api/src/middlewares/validate.ts` — Zod validation middleware with field-level errors
+- [x] `apps/api/src/utils/token.ts` — generateRandomToken, hashToken (SHA-256), generateAccessToken (15m), generateRefreshToken (7d)
+- [x] `apps/api/src/repositories/user.repository.ts` — findByEmail, findById, findByUsername, findOne, create, updateById, existsByEmail, existsByUsername, search
+- [x] `apps/api/src/services/email.service.ts` — Resend integration with dev console fallback
+- [x] `apps/api/src/services/auth.service.ts` — register, verifyEmail, login, refresh (rotation + reuse detection), logout, forgotPassword, resetPassword, getOAuthUrl, handleOAuthCallback (Google + GitHub)
+- [x] `apps/api/src/controllers/auth.controller.ts` — all handlers
+- [x] `apps/api/src/routes/auth.routes.ts` — all auth routes wired
+- [x] `apps/api/src/routes/user.routes.ts` — GET /me stub
+- [x] `apps/api/src/controllers/user.controller.ts` — getMe stub
+- [x] MongoDB connection active in `server.ts`
+- [x] `apps/web/src/services/auth-service.ts` — all auth API calls including OAuth
+- [x] `apps/web/src/hooks/api/use-auth.ts` — useLogin, useRegister, useLogout, useForgotPassword, useResetPassword
+- [x] `apps/web/src/providers/auth-provider.tsx` — session check on mount, 13-min refresh timer, route guard
+- [x] `apps/web/src/app/verify-email/page.tsx` — email verification page
+- [x] `apps/web/src/app/auth/callback/page.tsx` — OAuth callback handler
+- [x] `apps/web/src/components/auth/SocialLogin.tsx` — Google + GitHub OAuth buttons
+- [x] SignInForm, SignUpForm connected to real API mutations
+- [x] `auth-store.ts` stores token in memory only (no localStorage)
+- [x] Axios interceptor handles 401 → auto-refresh → retry with queue
+
+### Frontend UI (Static/Demo Mode)
+- [x] All pages: splash, sign-in, sign-up, forgot-password, reset-password, verify-email
+- [x] Chat page: 4-pane layout (sidebar, chat list, chat window, details panel)
+- [x] Status, Channels, Communities, Calls pages
+- [x] Active call screen (audio + video modes) with minimize widget
+- [x] Settings drawer with all settings views
+- [x] 7 Zustand stores with persistence
+- [x] All custom hooks
+
+### Backend Foundation
+- [x] Express app with full security middleware pipeline (Helmet, CORS, compression, rate limit, morgan, cookie-parser)
+- [x] Socket.IO server with basic room handlers (join_room, leave_room, send_message, typing)
+- [x] JWT auth middleware
+- [x] Global error handler
+- [x] Pino structured logger
+- [x] Zod-validated environment config (PORT, NODE_ENV, MONGO_URI, JWT_SECRET, JWT_REFRESH_SECRET, CLIENT_URL, CORS_ORIGIN, RESEND_API_KEY, EMAIL_FROM, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET)
+
+---
+
+## 📋 Backlog (Phases 3–5)
+
+See `docs/implementation_plan.md` for the full phased breakdown.
+
+- Phase 3A: Conversation & Message Models + REST API
+- Phase 3B: Real-Time Socket.IO Integration (activate socket-provider.tsx)
+- Phase 3C: File Sharing (Multer + S3)
+- Phase 3D: Group Chat
+- Phase 3E: Message Operations (edit, delete, react, reply, pin)
+- Phase 3F: Search & Push Notifications
+- Phase 4A: Status/Stories API
+- Phase 4B: Voice & Video Calls (WebRTC)
+- Phase 4C: Channels & Communities API
+- Phase 5: Production Hardening (Docker, CI/CD, monitoring, testing)

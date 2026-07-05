@@ -26,7 +26,8 @@ coverage
 out/
 build
 dist
-
+docs
+.ai
 
 # Debug
 npm-debug.log*
