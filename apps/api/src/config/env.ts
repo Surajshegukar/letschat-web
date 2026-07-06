@@ -4,8 +4,11 @@ import path from "path";
 
 import fs from "fs";
 
-// Load .env file depending on NODE_ENV and availability
-const nodeEnv = process.env.NODE_ENV || "development";
+// Determine if running from compiled dist directory to set default NODE_ENV
+const isProductionDir = __dirname.includes("dist");
+const defaultNodeEnv = isProductionDir ? "production" : "development";
+const nodeEnv = process.env.NODE_ENV || defaultNodeEnv;
+
 const envFile = nodeEnv === "production" ? ".env.production" : ".env.dev";
 const envPath = path.resolve(process.cwd(), envFile);
 
