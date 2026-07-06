@@ -9,6 +9,9 @@ const isProductionDir = __dirname.includes("dist");
 const defaultNodeEnv = isProductionDir ? "production" : "development";
 const nodeEnv = process.env.NODE_ENV || defaultNodeEnv;
 
+// Ensure process.env.NODE_ENV is populated
+process.env.NODE_ENV = nodeEnv;
+
 const envFile = nodeEnv === "production" ? ".env.production" : ".env.dev";
 const envPath = path.resolve(process.cwd(), envFile);
 
