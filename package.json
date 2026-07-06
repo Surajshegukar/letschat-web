@@ -3,6 +3,7 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "build:api": "turbo run build --filter=api",
     "dev": "turbo run dev",
     "start": "turbo run start --filter=api",
     "lint": "turbo run lint",
