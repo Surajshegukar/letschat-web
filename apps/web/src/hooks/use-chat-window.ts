@@ -1,68 +1,184 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Message } from "@/types/chat";
+import { useAuthStore } from "@/store/auth-store";
+import { useMessages, useSendMessage, useUploadAttachments } from "@/hooks/api/use-conversations";
+import { formatMessage, RawMessage } from "@/utils/chat-helpers";
+import { useSocket } from "@/providers/socket-provider";
 import { useChatStore } from "@/store/chat-store";
 
 export function useChatWindow(
   activeRoomId: string | null,
   _initialMessages?: Record<string, Message[]>
 ) {
-  const storeMessages = useChatStore((state) => state.messages);
-  const sendMessageInStore = useChatStore((state) => state.sendMessage);
-  const sendVoiceNoteInStore = useChatStore((state) => state.sendVoiceNote);
-  const sendAttachmentInStore = useChatStore((state) => state.sendAttachment);
-  const receiveMessageInStore = useChatStore((state) => state.receiveMessage);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const sendMessageMutation = useSendMessage();
+  const uploadAttachmentsMutation = useUploadAttachments();
+  const { socket, isConnected } = useSocket();
+
+  const {
+    data: messagesData,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useMessages(activeRoomId);
 
   const [inputText, setInputText] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isTypingRef = useRef(false);
 
-  // Auto-scroll to bottom of messages feed when messages change or room changes
+  // Manage typing indicators based on input changes
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [storeMessages, activeRoomId]);
+    if (!socket || !isConnected || !activeRoomId) return;
+
+    if (inputText.trim().length > 0) {
+      if (!isTypingRef.current) {
+        socket.emit("typing_start", { conversationId: activeRoomId });
+        isTypingRef.current = true;
+      }
+
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        socket.emit("typing_stop", { conversationId: activeRoomId });
+        isTypingRef.current = false;
+      }, 3000);
+    } else {
+      if (isTypingRef.current) {
+        socket.emit("typing_stop", { conversationId: activeRoomId });
+        isTypingRef.current = false;
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+        typingTimeoutRef.current = null;
+      }
+    }
+  }, [inputText, activeRoomId, socket, isConnected]);
+
+  // Clean up typing indicator on room change or unmount
+  useEffect(() => {
+    return () => {
+      if (socket && isConnected && activeRoomId && isTypingRef.current) {
+        socket.emit("typing_stop", { conversationId: activeRoomId });
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, [activeRoomId, socket, isConnected]);
+
+  // Flatten and format messages from all pages
+  const activeMessages = useMemo(() => {
+    if (!messagesData || !currentUserId) return [];
+    
+    // Flatten messages across all paginated pages
+    const allRawMessages = messagesData.pages.flatMap(
+      (page) => page.data.messages || []
+    );
+
+    // Map raw messages to client structure and reverse to get chronological ascending order (oldest to newest)
+    return allRawMessages
+      .map((msg: RawMessage) => formatMessage(msg, currentUserId))
+      .reverse();
+  }, [messagesData, currentUserId]);
+
+  const lastMessageId = activeMessages[activeMessages.length - 1]?.id;
+  const prevLastMessageIdRef = useRef<string | undefined>(undefined);
+  const prevActiveRoomIdRef = useRef<string | null>(null);
+
+  // Auto-scroll logic optimized for pagination
+  useEffect(() => {
+    const isRoomChanged = activeRoomId !== prevActiveRoomIdRef.current;
+    const isNewMessageArrived = lastMessageId !== prevLastMessageIdRef.current;
+
+    if (isRoomChanged || (isNewMessageArrived && lastMessageId)) {
+      messagesEndRef.current?.scrollIntoView({
+        behavior: isRoomChanged ? "auto" : "smooth",
+      });
+    }
+
+    prevActiveRoomIdRef.current = activeRoomId;
+    prevLastMessageIdRef.current = lastMessageId;
+  }, [lastMessageId, activeRoomId]);
+
+  const replyingToMessage = useChatStore((state) => state.replyingToMessage);
+  const setReplyingToMessage = useChatStore((state) => state.setReplyingToMessage);
 
   const sendMessage = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!inputText.trim() || !activeRoomId) return;
 
-    sendMessageInStore(activeRoomId, inputText);
+    sendMessageMutation.mutate({
+      conversationId: activeRoomId,
+      data: {
+        content: inputText,
+        type: "text",
+        replyTo: replyingToMessage ? replyingToMessage.id : undefined,
+      },
+    });
     setInputText("");
-
-    // Simulate typing answer after 1.5 seconds if talking to Olivia Rhye
-    if (activeRoomId === "olivia") {
-      setTimeout(() => {
-        const responseMsg: Message = {
-          id: `msg-resp-${Date.now()}`,
-          senderId: activeRoomId,
-          senderName: "Olivia Rhye",
-          content: `Thanks for typing! This is a static theme demonstration. 👍`,
-          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        };
-        receiveMessageInStore(activeRoomId, responseMsg);
-      }, 1500);
-    }
+    setReplyingToMessage(null);
   };
 
   const sendVoiceNote = (duration: string) => {
-    if (!activeRoomId) return;
-    sendVoiceNoteInStore(activeRoomId, duration);
+    console.log("Voice note sending scaffolded:", duration);
   };
 
   const sendAttachment = (type: "image" | "document") => {
-    if (!activeRoomId) return;
-    sendAttachmentInStore(activeRoomId, type);
+    console.log("Attachment sending scaffolded:", type);
   };
 
-  const activeMessages = activeRoomId ? storeMessages[activeRoomId] || [] : [];
+  const sendFiles = (files: File[]) => {
+    if (!activeRoomId) return;
+
+    const formData = new FormData();
+    files.forEach((file) => {
+      formData.append("files", file);
+    });
+
+    uploadAttachmentsMutation.mutate(
+      {
+        conversationId: activeRoomId,
+        formData,
+      },
+      {
+        onSuccess: (response) => {
+          const filesData = response.data.files || [];
+          filesData.forEach((file: any) => {
+            sendMessageMutation.mutate({
+              conversationId: activeRoomId,
+              data: {
+                content: "",
+                type: file.type, // "image" | "video" | "document"
+                attachments: [
+                  {
+                    url: file.url,
+                    filename: file.filename,
+                    mimeType: file.mimeType,
+                    size: file.size,
+                  },
+                ],
+                replyTo: replyingToMessage ? replyingToMessage.id : undefined,
+              },
+            });
+          });
+          setReplyingToMessage(null);
+        },
+      }
+    );
+  };
 
   return {
-    messages: storeMessages,
     inputText,
     setInputText,
     sendMessage,
     sendVoiceNote,
     sendAttachment,
+    sendFiles,
     activeMessages,
     messagesEndRef,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
   };
 }
 

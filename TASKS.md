@@ -6,32 +6,36 @@ Track all in-progress and upcoming work here. Update this file when starting or 
 
 ## 🔴 In Progress
 
-### Phase 2.1 — Backend: User Profile API
-- [ ] `apps/api/src/validators/user.validator.ts` — updateProfileSchema, changePasswordSchema
-- [ ] `apps/api/src/services/user.service.ts` — getProfile, updateProfile, changePassword, searchUsers, deleteAccount
-- [ ] `apps/api/src/controllers/user.controller.ts` — expand beyond current getMe stub (updateMe, changePassword, searchUsers, deleteAccount)
-- [ ] `apps/api/src/routes/user.routes.ts` — PATCH /me, PATCH /me/password, GET /search, DELETE /me
+*No active tasks in progress.*
 
 ---
 
 ## 🟡 Up Next
 
-### Phase 2.2 — Backend: Avatar Upload
-- [ ] Install: `multer`, `sharp`, `@aws-sdk/client-s3` (or `cloudinary`)
-- [ ] `apps/api/src/config/storage.ts` — S3/Cloudinary client
-- [ ] `apps/api/src/middlewares/upload.ts` — Multer memoryStorage, file filter, size limits
-- [ ] `apps/api/src/services/upload.service.ts` — processAndUploadAvatar, processAndUploadMedia
-- [ ] `POST /api/users/me/avatar` route
-
-### Phase 2.3 — Frontend: Connect Profile & Settings to API
-- [ ] `apps/web/src/services/user-service.ts`
-- [ ] `apps/web/src/hooks/api/use-user.ts` — useCurrentUser, useUpdateProfile, useUploadAvatar, useChangePassword
-- [ ] Connect SettingsProfileView, SettingsAccountView to real API
-- [ ] Avatar upload in SettingsDrawer
+*No active tasks in progress.*
 
 ---
 
 ## ✅ Completed
+
+### Phase 2.3 — Frontend: Connect Profile & Settings to API (COMPLETE)
+- [x] `apps/web/src/services/user-service.ts`
+- [x] `apps/web/src/hooks/api/use-user.ts` — useCurrentUser, useUpdateProfile, useUploadAvatar, useChangePassword
+- [x] Connect SettingsProfileView, SettingsAccountView to real API
+- [x] Avatar upload in SettingsDrawer
+
+### Phase 2.2 — Backend: Avatar Upload (COMPLETE)
+- [x] Install: `multer`, `sharp`, `@aws-sdk/client-s3` (or `cloudinary`)
+- [x] `apps/api/src/config/storage.ts` — S3/Cloudinary client
+- [x] `apps/api/src/middlewares/upload.ts` — Multer memoryStorage, file filter, size limits
+- [x] `apps/api/src/services/upload.service.ts` — processAndUploadAvatar, processAndUploadMedia
+- [x] `POST /api/users/me/avatar` route
+
+### Phase 2.1 — Backend: User Profile API (COMPLETE)
+- [x] `apps/api/src/validators/user.validator.ts` — updateProfileSchema
+- [x] `apps/api/src/services/user.service.ts` — getProfile, updateProfile, searchUsers, deleteAccount
+- [x] `apps/api/src/controllers/user.controller.ts` — expand beyond current getMe stub (updateMe, searchUsers, deleteAccount)
+- [x] `apps/api/src/routes/user.routes.ts` — PATCH /me, GET /search, DELETE /me
 
 ### Phase 1 — Authentication & Authorization (COMPLETE)
 - [x] `apps/api/src/models/User.ts` — full schema with bcrypt pre-save, comparePassword, toJSON sanitization

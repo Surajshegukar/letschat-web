@@ -17,6 +17,7 @@ interface SettingsProfileViewProps {
   tempAbout: string;
   setTempAbout: (about: string) => void;
   handleSaveAbout: () => void;
+  handleUploadCustomAvatar: (file: File) => void;
 }
 
 export function SettingsProfileView({
@@ -35,6 +36,7 @@ export function SettingsProfileView({
   tempAbout,
   setTempAbout,
   handleSaveAbout,
+  handleUploadCustomAvatar,
 }: SettingsProfileViewProps) {
   return (
     <div className="p-4 space-y-4">
@@ -58,16 +60,35 @@ export function SettingsProfileView({
         </div>
 
         {showAvatarChooser && (
-          <div className="mt-4 p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex gap-2.5 shadow-inner">
-            {avatarPresets.map((url) => (
-              <button
-                key={url}
-                onClick={() => handleSelectAvatar(url)}
-                className="h-9 w-9 rounded-xl overflow-hidden border border-zinc-300 dark:border-zinc-700 hover:scale-105 active:scale-95 transition"
-              >
-                <img src={url} alt="Preset Option" className="h-full w-full object-cover" />
-              </button>
-            ))}
+          <div className="mt-4 p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl flex flex-col gap-2.5 shadow-inner">
+            <div className="flex gap-2.5">
+              {avatarPresets.map((url) => (
+                <button
+                  key={url}
+                  onClick={() => handleSelectAvatar(url)}
+                  className="h-9 w-9 rounded-xl overflow-hidden border border-zinc-300 dark:border-zinc-700 hover:scale-105 active:scale-95 transition"
+                >
+                  <img src={url} alt="Preset Option" className="h-full w-full object-cover" />
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-center border-t border-zinc-200 dark:border-zinc-800 pt-2">
+              <label className="cursor-pointer text-[10px] font-bold uppercase tracking-wider text-emerald-650 dark:text-[#19E68C] hover:underline flex items-center gap-1.5 py-1">
+                <Camera className="h-3.5 w-3.5" />
+                Upload Custom Image
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      handleUploadCustomAvatar(file);
+                    }
+                  }}
+                  className="hidden"
+                />
+              </label>
+            </div>
           </div>
         )}
       </div>

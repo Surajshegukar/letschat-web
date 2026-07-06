@@ -150,6 +150,7 @@ userSchema.methods.comparePassword = async function (
 // ── Sanitize JSON output ─────────────────────────────────────────────────
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
+  obj.avatarUrl = obj.avatar;
   delete obj.password;
   delete obj.refreshTokens;
   delete obj.verificationToken;

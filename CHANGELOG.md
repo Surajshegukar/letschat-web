@@ -8,7 +8,16 @@ Format: `## [version] — YYYY-MM-DD` with sections Added / Changed / Fixed / Re
 ## [0.3.0] — In Progress
 
 ### Added
-- Phase 2: User Profile & Settings API (in progress — see TASKS.md)
+- **Phase 2.2 / 2.3: User Profile & Settings Complete**:
+  - Backend S3/Cloudinary storage and local upload fallback service using Multer and Sharp.
+  - Backend password validation and change password service/controllers/routes (`PATCH /api/users/me/password`).
+  - Frontend hooks, service APIs, and collapsible change password card interface inside SettingsAccountView.
+- **Phase 3A: User Search & New Chat**:
+  - Frontend `useSearchUsers` query hook leveraging `/api/users/search` (updated to query default contacts immediately on mount).
+  - Frontend ChatList query-based filtering based on sidebar search input.
+  - WhatsApp-style slide-in sidebar NewChatList drawer layout (as in `newchat.png`) featuring alphabetical contacts grouping with A-Z headers, quick actions (New Group/Contact/Community), current user "Message Yourself" shortcut, and direct conversation creation trigger.
+  - Real-time conversation syncing: Backend emits `new_conversation` on creation and `new_message` to participants' personal rooms. Frontend hooks update and query client caches dynamically.
+  - Global presence syncing: Backend broadcasts status events globally and emits a list of online users on socket connection, updating the frontend in real-time without requiring refreshes.
 
 ---
 

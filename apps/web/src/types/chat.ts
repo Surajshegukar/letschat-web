@@ -2,7 +2,7 @@ export interface Attachment {
   name: string;
   size: string;
   url?: string;
-  type?: "image" | "audio" | "document";
+  type?: "image" | "audio" | "document" | "video";
 }
 
 export interface Message {
@@ -14,6 +14,16 @@ export interface Message {
   timestamp: string;
   status?: "sent" | "delivered" | "read";
   attachment?: Attachment;
+  replyTo?: {
+    id: string;
+    senderName: string;
+    content: string;
+  };
+  reactions?: {
+    emoji: string;
+    userIds: string[];
+  }[];
+  createdAt?: string;
 }
 
 export interface ChatRoom {
@@ -25,7 +35,10 @@ export interface ChatRoom {
   timestamp: string;
   unreadCount?: number;
   isOnline?: boolean;
+  partnerId?: string;
   isPinned?: boolean;
   isArchived?: boolean;
   hasMention?: boolean;
+  about?: string;
+  description?: string;
 }

@@ -4,6 +4,7 @@ export interface User {
   id: string;
   username: string;
   email: string;
+  displayName?: string;
   avatarUrl?: string;
   about?: string;
   soundEnabled?: boolean;
@@ -27,7 +28,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
 
   setAuth: (user, token) => {
-    set({ user, token, isAuthenticated: true, isLoading: false });
+    const normalizedUser = {
+      ...user,
+      id: user.id || (user as any)._id,
+    };
+    set({ user: normalizedUser, token, isAuthenticated: true, isLoading: false });
   },
 
   logout: () => {
@@ -37,7 +42,10 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLoading: (isLoading) => set({ isLoading }),
 
   updateUser: (fields) =>
-    set((state) => ({
-      user: state.user ? { ...state.user, ...fields } : null,
-    })),
+    set((state) => {
+      if (!state.user) return { user: null };
+      const updatedUser = { ...state.user, ...fields };
+      updatedUser.id = updatedUser.id || (updatedUser as any)._id;
+      return { user: updatedUser };
+    }),
 }));

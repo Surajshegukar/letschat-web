@@ -6,6 +6,10 @@ import { connectDatabase } from "./database/connection";
 import { setupSocketHandlers } from "./sockets/handler";
 import { logger } from "./utils/logger";
 
+import { createAdapter } from "@socket.io/redis-adapter";
+import { redisClient, redisSubClient } from "./config/redis";
+import { socketService } from "./services/socket.service";
+
 const server = http.createServer(app);
 
 // Attach Socket.IO
@@ -16,6 +20,15 @@ const io = new Server(server, {
     credentials: true,
   },
 });
+
+// Configure Redis adapter if clients are available
+if (redisClient && redisSubClient) {
+  io.adapter(createAdapter(redisClient, redisSubClient));
+  logger.info("🔌 Redis adapter attached to Socket.IO Server");
+}
+
+// Initialize Socket Service wrapper
+socketService.init(io);
 
 setupSocketHandlers(io);
 

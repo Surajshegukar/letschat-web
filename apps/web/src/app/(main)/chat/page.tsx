@@ -7,22 +7,35 @@ import { useCallStore } from "@/store/call-store";
 import { DetailsPanel } from "@/components/details-panel/DetailsPanel";
 import { MediaModal } from "@/components/details-panel/media-modal/MediaModal";
 import { useChatStore } from "@/store/chat-store";
+import { useAuthStore } from "@/store/auth-store";
+import { useConversations } from "@/hooks/api/use-conversations";
+import { formatConversation, RawConversation } from "@/utils/chat-helpers";
+import { useSocketEvents } from "@/hooks/socket/use-socket-events";
 
 export default function ChatPage() {
+  useSocketEvents();
+
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const setActiveRoomId = useChatStore((state) => state.setActiveRoomId);
-  const rooms = useChatStore((state) => state.rooms);
+  const { data: convResponse } = useConversations();
+  const currentUserId = useAuthStore((state) => state.user?.id);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const { startCall } = useCallStore();
 
-  const activeRoom = rooms.find((r) => r.id === activeRoomId);
+  const rawConversations = convResponse?.data?.conversations;
+  
+  const activeRoom = React.useMemo(() => {
+    if (!activeRoomId || !currentUserId || !rawConversations) return null;
+    const raw = rawConversations.find((c: { _id: string }) => c._id === activeRoomId);
+    if (!raw) return null;
+    return formatConversation(raw as unknown as RawConversation, currentUserId);
+  }, [rawConversations, activeRoomId, currentUserId]);
+
   const roomName = activeRoom ? activeRoom.name : "Chat Room";
 
   const handleSelectRoom = (roomId: string) => {
     setActiveRoomId(roomId);
-    // Auto-open details panel if a chat is selected to mirror design
-    // setIsDetailsOpen(true);
   };
 
   const handleToggleDetails = () => {

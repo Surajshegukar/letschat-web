@@ -90,15 +90,34 @@ export const userRepository = {
   async search(
     query: string,
     excludeUserId: string,
-    limit: number = 20
+    limit: number = 100
   ): Promise<IUser[]> {
-    const regex = new RegExp(query, "i");
-    return User.find({
+    // When query is empty, return ALL users (except self).
+    // When query has text, filter by username/email/displayName regex.
+    const filter: FilterQuery<IUser> = {
       _id: { $ne: excludeUserId },
-      $or: [{ username: regex }, { email: regex }, { displayName: regex }],
-    })
+    };
+
+    if (query.trim()) {
+      const regex = new RegExp(query.trim(), "i");
+      filter.$or = [
+        { username: regex },
+        { email: regex },
+        { displayName: regex },
+      ];
+    }
+
+    return User.find(filter)
       .select("username email displayName avatar about isOnline lastSeen")
+      .sort({ isOnline: -1, username: 1 }) // online users first, then alphabetical
       .limit(limit)
       .exec();
+  },
+
+  /**
+   * Delete a user by ID.
+   */
+  async deleteById(id: string): Promise<IUser | null> {
+    return User.findByIdAndDelete(id).exec();
   },
 };

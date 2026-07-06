@@ -22,6 +22,10 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().default("google_client_secret_placeholder"),
   GITHUB_CLIENT_ID: z.string().default("github_client_id_placeholder"),
   GITHUB_CLIENT_SECRET: z.string().default("github_client_secret_placeholder"),
+  AWS_ACCESS_KEY_ID: z.string().optional(),
+  AWS_SECRET_ACCESS_KEY: z.string().optional(),
+  AWS_REGION: z.string().optional(),
+  AWS_S3_BUCKET: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

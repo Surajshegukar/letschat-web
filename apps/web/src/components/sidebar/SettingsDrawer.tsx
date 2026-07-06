@@ -32,11 +32,13 @@ export function SettingsDrawer() {
     handleSaveName,
     handleSaveAbout,
     handleSelectAvatar,
+    handleUploadCustomAvatar,
     handleBack,
     securityAlerts,
     setSecurityAlerts,
     twoStepEnabled,
     setTwoStepEnabled,
+    handleDeleteAccount,
     lastSeen,
     setLastSeen,
     profilePhotoPriv,
@@ -118,6 +120,7 @@ export function SettingsDrawer() {
                 tempAbout={tempAbout}
                 setTempAbout={setTempAbout}
                 handleSaveAbout={handleSaveAbout}
+                handleUploadCustomAvatar={handleUploadCustomAvatar}
               />
             )}
 
@@ -127,6 +130,7 @@ export function SettingsDrawer() {
                 setSecurityAlerts={setSecurityAlerts}
                 twoStepEnabled={twoStepEnabled}
                 setTwoStepEnabled={setTwoStepEnabled}
+                handleDeleteAccount={handleDeleteAccount}
               />
             )}
 

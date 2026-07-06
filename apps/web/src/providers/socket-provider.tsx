@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { Socket } from "socket.io-client";
+import { useAuthStore } from "@/store/auth-store";
+import { connectSocket, disconnectSocket } from "@/lib/socket";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -16,36 +18,42 @@ const SocketContext = createContext<SocketContextType>({
 export const useSocket = () => useContext(SocketContext);
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const [socket, _setSocket] = useState<Socket | null>(null);
-  const [isConnected, _setIsConnected] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
+  const token = useAuthStore((state) => state.token);
 
   useEffect(() => {
-    // Commented out socket connection for static mode
-    /*
-    const siteUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
-    const socketInstance = io(siteUrl, {
-      autoConnect: true,
-      reconnectionAttempts: 5,
-      reconnectionDelay: 1000,
-    });
+    if (!token) {
+      disconnectSocket();
+      setSocket(null);
+      setIsConnected(false);
+      return;
+    }
 
-    socketInstance.on("connect", () => {
+    const socketInstance = connectSocket(token);
+
+    const onConnect = () => {
       setIsConnected(true);
       console.log("Socket.IO connected to backend");
-    });
+    };
 
-    socketInstance.on("disconnect", () => {
+    const onDisconnect = () => {
       setIsConnected(false);
       console.log("Socket.IO disconnected from backend");
-    });
+    };
 
+    socketInstance.on("connect", onConnect);
+    socketInstance.on("disconnect", onDisconnect);
+
+    // Initial connection status sync
+    setIsConnected(socketInstance.connected);
     setSocket(socketInstance);
 
     return () => {
-      socketInstance.disconnect();
+      socketInstance.off("connect", onConnect);
+      socketInstance.off("disconnect", onDisconnect);
     };
-    */
-  }, []);
+  }, [token]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

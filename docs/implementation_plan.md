@@ -48,18 +48,18 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Install dependencies: `bcryptjs`, `@types/bcryptjs`
-- [ ] Create `apps/api/src/models/User.ts`
+- [x] Install dependencies: `bcryptjs`, `@types/bcryptjs`
+- [x] Create `apps/api/src/models/User.ts`
   - Define schema: `username`, `email`, `password` (select: false), `displayName`, `avatar`, `about`, `isOnline`, `lastSeen`, `isVerified`, `verificationToken`, `resetToken`, `resetTokenExpiry`, `refreshTokens[]`, `pushToken`, `soundEnabled`
   - Add pre-save hook: hash password with `bcrypt.hash(password, 12)` if modified
   - Add instance method: `comparePassword(candidate)` → `bcrypt.compare()`
   - Add indexes: `{ email: 1 }` (unique), `{ username: 1 }` (unique)
-- [ ] Create `apps/api/src/validators/auth.validator.ts`
+- [x] Create `apps/api/src/validators/auth.validator.ts`
   - `registerSchema`: Zod schema for `{ username, email, password }`
   - `loginSchema`: Zod schema for `{ email, password }`
   - `forgotPasswordSchema`: `{ email }`
   - `resetPasswordSchema`: `{ token, newPassword }`
-- [ ] Create `apps/api/src/middlewares/validate.ts`
+- [x] Create `apps/api/src/middlewares/validate.ts`
   - Generic middleware factory: `validate(schema)` → parses `req.body` with Zod, returns 400 on failure
 
 **Verify**: Write a quick scratch script that creates a user in MongoDB and verifies the password hash works.
@@ -72,19 +72,19 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Install dependencies: `resend` (or `nodemailer` + SMTP)
-- [ ] Create `apps/api/src/services/email.service.ts`
+- [x] Install dependencies: `resend` (or `nodemailer` + SMTP)
+- [x] Create `apps/api/src/services/email.service.ts`
   - `sendVerificationEmail(email, token)` — sends email with verification link
   - `sendPasswordResetEmail(email, token)` — sends reset link
   - Use HTML email templates with the app branding
-- [ ] Create `apps/api/src/utils/token.ts`
+- [x] Create `apps/api/src/utils/token.ts`
   - `generateRandomToken()` — `crypto.randomBytes(32).toString('hex')`
   - `generateAccessToken(payload)` — `jwt.sign(payload, secret, { expiresIn: '15m' })`
   - `generateRefreshToken(payload)` — `jwt.sign(payload, refreshSecret, { expiresIn: '7d' })`
-- [ ] Create `apps/api/src/repositories/user.repository.ts`
+- [x] Create `apps/api/src/repositories/user.repository.ts`
   - `findByEmail(email)`, `findById(id)`, `create(data)`, `updateById(id, data)`
   - All DB queries go through repository — controllers never touch Mongoose directly
-- [ ] Create `apps/api/src/services/auth.service.ts`
+- [x] Create `apps/api/src/services/auth.service.ts`
   - `register({ username, email, password })`:
     1. Check if email/username already exists → 409 Conflict
     2. Create user document (password auto-hashed by pre-save hook)
@@ -94,14 +94,14 @@ graph LR
   - `verifyEmail(token)`:
     1. Find user by `verificationToken`
     2. Set `isVerified = true`, clear `verificationToken`
-- [ ] Create `apps/api/src/controllers/auth.controller.ts`
+- [x] Create `apps/api/src/controllers/auth.controller.ts`
   - `register(req, res)` — calls `authService.register()`, returns 201
   - `verifyEmail(req, res)` — calls `authService.verifyEmail()`, returns 200
-- [ ] Create `apps/api/src/routes/auth.routes.ts`
+- [x] Create `apps/api/src/routes/auth.routes.ts`
   - `POST /api/auth/register` → `validate(registerSchema)` → `authController.register`
   - `GET /api/auth/verify/:token` → `authController.verifyEmail`
-- [ ] Register routes in `app.ts`: `app.use('/api/auth', authRoutes)`
-- [ ] Remove the existing hardcoded login/me routes from `app.ts`
+- [x] Register routes in `app.ts`: `app.use('/api/auth', authRoutes)`
+- [x] Remove the existing hardcoded login/me routes from `app.ts`
 
 **Verify**: Use Postman/Thunder Client to register a user, check MongoDB for the document, check email delivery.
 
@@ -113,10 +113,10 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Add to `apps/api/src/config/env.ts`:
+- [x] Add to `apps/api/src/config/env.ts`:
   - `JWT_REFRESH_SECRET` (separate from JWT_SECRET)
   - `CLIENT_URL` (for email links and CORS)
-- [ ] Add to `apps/api/src/services/auth.service.ts`:
+- [x] Add to `apps/api/src/services/auth.service.ts`:
   - `login({ email, password })`:
     1. Find user by email (select +password)
     2. Check `isVerified` → 403 "Please verify your email"
@@ -135,15 +135,15 @@ graph LR
   - `logout(userId, refreshToken)`:
     1. Remove matching refresh token from `user.refreshTokens[]`
     2. Clear the cookie
-- [ ] Update `apps/api/src/controllers/auth.controller.ts`:
+- [x] Update `apps/api/src/controllers/auth.controller.ts`:
   - `login(req, res)` — calls service, sets refresh cookie: `res.cookie('refreshToken', token, { httpOnly: true, secure: true, sameSite: 'strict', maxAge: 7 * 24 * 60 * 60 * 1000 })`
   - `refresh(req, res)` — reads `req.cookies.refreshToken`, returns new access token
   - `logout(req, res)` — clears cookie
-- [ ] Update `apps/api/src/routes/auth.routes.ts`:
+- [x] Update `apps/api/src/routes/auth.routes.ts`:
   - `POST /api/auth/login` → `validate(loginSchema)` → `authController.login`
   - `POST /api/auth/refresh` → `authController.refresh`
   - `POST /api/auth/logout` → `authenticateJWT` → `authController.logout`
-- [ ] Update `apps/api/src/middlewares/auth.ts`:
+- [x] Update `apps/api/src/middlewares/auth.ts`:
   - Read token from `Authorization: Bearer <token>` header
   - Verify against `JWT_SECRET` (not refresh secret)
   - Attach `req.user = { id, username, email }`
@@ -156,7 +156,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Add to `apps/api/src/services/auth.service.ts`:
+- [x] Add to `apps/api/src/services/auth.service.ts`:
   - `forgotPassword(email)`:
     1. Find user by email
     2. Generate reset token + expiry (1 hour)
@@ -167,10 +167,10 @@ graph LR
     2. Set new password (pre-save hook hashes it)
     3. Clear `resetToken` and `resetTokenExpiry`
     4. Clear all `refreshTokens[]` (force re-login on all devices)
-- [ ] Update `apps/api/src/controllers/auth.controller.ts`:
+- [x] Update `apps/api/src/controllers/auth.controller.ts`:
   - `forgotPassword(req, res)` — always returns 200 (don't leak whether email exists)
   - `resetPassword(req, res)` — validates token + new password
-- [ ] Update `apps/api/src/routes/auth.routes.ts`:
+- [x] Update `apps/api/src/routes/auth.routes.ts`:
   - `POST /api/auth/forgot-password` → `validate(forgotPasswordSchema)` → controller
   - `POST /api/auth/reset-password` → `validate(resetPasswordSchema)` → controller
 
@@ -184,7 +184,7 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Create `apps/web/src/services/auth-service.ts`
+- [x] Create `apps/web/src/services/auth-service.ts`
   - `login(email, password)` → `POST /api/auth/login`
   - `register(username, email, password)` → `POST /api/auth/register`
   - `forgotPassword(email)` → `POST /api/auth/forgot-password`
@@ -192,31 +192,31 @@ graph LR
   - `refreshToken()` → `POST /api/auth/refresh` (with credentials for cookie)
   - `logout()` → `POST /api/auth/logout`
   - `getMe()` → `GET /api/users/me`
-- [ ] Create `apps/web/src/hooks/api/use-auth.ts`
+- [x] Create `apps/web/src/hooks/api/use-auth.ts`
   - `useLogin()` → React Query `useMutation` wrapping `authService.login()`
   - `useRegister()` → `useMutation` wrapping `authService.register()`
   - `useLogout()` → `useMutation` wrapping `authService.logout()`
-- [ ] Update `apps/web/src/store/auth-store.ts`:
+- [x] Update `apps/web/src/store/auth-store.ts`:
   - Store `accessToken` in Zustand **in memory only** (remove localStorage for token)
   - Remove hardcoded default user
   - `setAuth(user, accessToken)` — set in-memory token
   - `logout()` — clear state, call logout API
-- [ ] Update `apps/web/src/lib/axios.ts`:
+- [x] Update `apps/web/src/lib/axios.ts`:
   - Request interceptor: read token from `useAuthStore.getState().token` instead of localStorage
   - Response interceptor on 401: attempt `authService.refreshToken()` → retry original request → if refresh fails → logout
   - Add `withCredentials: true` to axios config (for cookies)
-- [ ] Update `apps/web/src/components/auth/SignInForm.tsx`:
+- [x] Update `apps/web/src/components/auth/SignInForm.tsx`:
   - Use `useLogin()` mutation instead of mock
   - Show loading state on submit button
   - Handle error responses (invalid credentials, unverified email)
   - On success: `authStore.setAuth(user, token)` → `router.push('/chat')`
-- [ ] Update `apps/web/src/components/auth/SignUpForm.tsx`:
+- [x] Update `apps/web/src/components/auth/SignUpForm.tsx`:
   - Use `useRegister()` mutation
   - On success: show "Check your email" message → redirect to `/sign-in`
-- [ ] Update `apps/web/src/components/auth/ForgotPasswordForm.tsx`:
+- [x] Update `apps/web/src/components/auth/ForgotPasswordForm.tsx`:
   - Connect to real API
   - Show success toast regardless (security — don't leak email existence)
-- [ ] Update `apps/web/src/components/auth/ResetPasswordForm.tsx`:
+- [x] Update `apps/web/src/components/auth/ResetPasswordForm.tsx`:
   - Read `token` from URL query params
   - Call reset password API
   - On success: redirect to `/sign-in` with success message
@@ -229,20 +229,20 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Create `apps/web/src/providers/auth-provider.tsx`
+- [x] Create `apps/web/src/providers/auth-provider.tsx`
   - On mount: call `authService.getMe()` to check if session is valid (refresh cookie auto-sent)
   - If valid: set user in auth store, render children
   - If invalid: redirect to `/sign-in`
   - Show loading skeleton while checking
-- [ ] Create `apps/web/src/components/auth/AuthGuard.tsx`
+- [x] Create `apps/web/src/components/auth/AuthGuard.tsx`
   - Wrapper component that checks `isAuthenticated` from auth store
   - If not authenticated → redirect to `/sign-in`
   - If authenticated → render children
-- [ ] Update `apps/web/src/app/(main)/layout.tsx`:
+- [x] Update `apps/web/src/app/(main)/layout.tsx`:
   - Wrap with `AuthGuard`
-- [ ] Update `apps/web/src/app/page.tsx` (splash):
+- [x] Update `apps/web/src/app/page.tsx` (splash):
   - After loading animation: check if authenticated → go to `/chat`, else → go to `/sign-in`
-- [ ] Set up automatic token refresh timer:
+- [x] Set up automatic token refresh timer:
   - In `auth-provider.tsx`: set `setInterval` to call `refreshToken()` every 13 minutes (before 15-min access token expires)
   - Clear interval on unmount
 
@@ -264,10 +264,10 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/validators/user.validator.ts`
+- [x] Create `apps/api/src/validators/user.validator.ts`
   - `updateProfileSchema`: `{ displayName?, about?, soundEnabled? }`
   - `changePasswordSchema`: `{ currentPassword, newPassword }`
-- [ ] Create `apps/api/src/services/user.service.ts`
+- [x] Create `apps/api/src/services/user.service.ts`
   - `getProfile(userId)` — fetch user by ID, exclude sensitive fields
   - `updateProfile(userId, data)` — update allowed fields only
   - `changePassword(userId, currentPassword, newPassword)`:
@@ -277,19 +277,19 @@ graph LR
     4. Invalidate all refresh tokens (force re-login)
   - `searchUsers(query, currentUserId)` — find users by username/email, exclude self
   - `deleteAccount(userId)` — soft-delete or hard-delete user + cleanup
-- [ ] Create `apps/api/src/controllers/user.controller.ts`
+- [x] Create `apps/api/src/controllers/user.controller.ts`
   - `getMe(req, res)` — return `req.user` full profile
   - `updateMe(req, res)` — update profile
   - `changePassword(req, res)`
   - `searchUsers(req, res)` — query param `?q=searchterm`
   - `deleteAccount(req, res)`
-- [ ] Create `apps/api/src/routes/user.routes.ts`
+- [x] Create `apps/api/src/routes/user.routes.ts`
   - `GET /api/users/me` → `authenticateJWT` → `userController.getMe`
   - `PATCH /api/users/me` → `authenticateJWT` → `validate(updateProfileSchema)` → `userController.updateMe`
   - `PATCH /api/users/me/password` → `authenticateJWT` → `validate(changePasswordSchema)` → `userController.changePassword`
   - `GET /api/users/search?q=` → `authenticateJWT` → `userController.searchUsers`
   - `DELETE /api/users/me` → `authenticateJWT` → `userController.deleteAccount`
-- [ ] Register in `app.ts`: `app.use('/api/users', userRoutes)`
+- [x] Register in `app.ts`: `app.use('/api/users', userRoutes)`
 
 **Verify**: Postman — get profile, update display name, change password, search users.
 
@@ -299,17 +299,17 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Install dependencies: `multer`, `sharp`, `@aws-sdk/client-s3` (or `cloudinary`)
-- [ ] Create `apps/api/src/config/storage.ts`
+- [x] Install dependencies: `multer`, `sharp`, `@aws-sdk/client-s3` (or `cloudinary`)
+- [x] Create `apps/api/src/config/storage.ts`
   - Configure S3 client (or Cloudinary SDK)
   - Export `uploadToS3(buffer, key, contentType)` → returns URL
   - Export `deleteFromS3(key)`
-- [ ] Create `apps/api/src/middlewares/upload.ts`
+- [x] Create `apps/api/src/middlewares/upload.ts`
   - Multer config with `memoryStorage()` (files stay in memory as buffers)
   - File filter: allow only `image/jpeg`, `image/png`, `image/webp`
   - Size limit: 5 MB for avatars
   - Export `uploadAvatar` middleware (single file, field name `'avatar'`)
-- [ ] Create `apps/api/src/services/upload.service.ts`
+- [x] Create `apps/api/src/services/upload.service.ts`
   - `processAndUploadAvatar(buffer, userId)`:
     1. Use Sharp: resize to 400x400, crop center, convert to WebP, quality 80%
     2. Generate thumbnail: 100x100
@@ -319,13 +319,13 @@ graph LR
     1. If image: resize to max 1920px, generate 200px thumbnail
     2. Upload to S3: `media/{timestamp}_{filename}`
     3. Return `{ url, thumbnailUrl, size, width, height }`
-- [ ] Add to `apps/api/src/controllers/user.controller.ts`:
+- [x] Add to `apps/api/src/controllers/user.controller.ts`:
   - `uploadAvatar(req, res)`:
     1. Get `req.file.buffer`
     2. Call `uploadService.processAndUploadAvatar()`
     3. Update user's `avatar` field in DB
     4. Return new avatar URL
-- [ ] Add to `apps/api/src/routes/user.routes.ts`:
+- [x] Add to `apps/api/src/routes/user.routes.ts`:
   - `POST /api/users/me/avatar` → `authenticateJWT` → `uploadAvatar` (multer) → `userController.uploadAvatar`
 
 **Verify**: Upload an image via Postman form-data → check S3/Cloudinary for processed file → verify user document updated.
@@ -336,28 +336,28 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Create `apps/web/src/services/user-service.ts`
+- [x] Create `apps/web/src/services/user-service.ts`
   - `getMe()` → `GET /api/users/me`
   - `updateProfile(data)` → `PATCH /api/users/me`
   - `uploadAvatar(file)` → `POST /api/users/me/avatar` (FormData)
   - `changePassword(data)` → `PATCH /api/users/me/password`
   - `deleteAccount()` → `DELETE /api/users/me`
-- [ ] Create `apps/web/src/hooks/api/use-user.ts`
+- [x] Create `apps/web/src/hooks/api/use-user.ts`
   - `useCurrentUser()` → `useQuery(['user', 'me'], userService.getMe)`
   - `useUpdateProfile()` → `useMutation` with optimistic update on query cache
   - `useUploadAvatar()` → `useMutation` with progress tracking
   - `useChangePassword()` → `useMutation`
-- [ ] Update `apps/web/src/components/sidebar/SettingsDrawer.tsx`:
+- [x] Update `apps/web/src/components/sidebar/SettingsDrawer.tsx`:
   - **Profile section**: show avatar (from API), display name, about — all editable
   - **Avatar upload**: click avatar → file picker → preview → upload → show new avatar
   - **Password change**: current password + new password form
   - **Sound toggle**: connected to user settings API
   - **Delete account**: confirmation modal → call API → logout
-- [ ] Update settings-views components:
+- [x] Update settings-views components:
   - Connect each settings form to real API calls via hooks
   - Show success/error toasts via Sonner
   - Loading states during saves
-- [ ] Update auth-store default user:
+- [x] Update auth-store default user:
   - Remove the hardcoded "John Doe" user
   - Populate from `useCurrentUser()` query result
 
@@ -379,10 +379,10 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/models/Conversation.ts`
+- [x] Create `apps/api/src/models/Conversation.ts`
   - Schema: `type` (direct/group), `name`, `avatar`, `description`, `createdBy`, `participants[]` (embedded: userId, role, joinedAt, mutedUntil, isArchived), `lastMessage` (denormalized: content, senderId, timestamp, type), `pinnedMessages[]`, `isActive`
   - Indexes: `{ 'participants.userId': 1, updatedAt: -1 }`
-- [ ] Create `apps/api/src/models/Message.ts`
+- [x] Create `apps/api/src/models/Message.ts`
   - Schema: `conversationId`, `senderId`, `type` (text/image/audio/video/document/system), `content`, `attachments[]` (url, thumbnail, filename, mimeType, size, duration, width, height), `replyTo`, `reactions[]` (emoji, userIds), `deliveredTo[]`, `readBy[]`, `isEdited`, `isDeleted`, `deletedAt`
   - Indexes: `{ conversationId: 1, createdAt: -1 }` (primary query), `{ senderId: 1 }`
 
@@ -394,7 +394,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/repositories/conversation.repository.ts`
+- [x] Create `apps/api/src/repositories/conversation.repository.ts`
   - `findByUserId(userId, options)` — paginated, sorted by `updatedAt`, populate participant avatars
   - `findById(id)` — with participant details
   - `create(data)` — create conversation
@@ -402,10 +402,10 @@ graph LR
   - `addParticipant(conversationId, userId, role)`
   - `removeParticipant(conversationId, userId)`
   - `isParticipant(conversationId, userId)` — authorization check
-- [ ] Create `apps/api/src/validators/conversation.validator.ts`
+- [x] Create `apps/api/src/validators/conversation.validator.ts`
   - `createConversationSchema`: `{ type, participantIds[], name?, description? }`
   - `updateConversationSchema`: `{ name?, description?, avatar? }`
-- [ ] Create `apps/api/src/services/conversation.service.ts`
+- [x] Create `apps/api/src/services/conversation.service.ts`
   - `getUserConversations(userId, page, limit)`:
     1. Find all conversations where userId is a participant
     2. Populate participant user details (username, avatar, isOnline)
@@ -421,8 +421,8 @@ graph LR
   - `getConversationById(conversationId, userId)`:
     1. Find conversation
     2. Verify userId is a participant → 403 if not
-- [ ] Create `apps/api/src/controllers/conversation.controller.ts`
-- [ ] Create `apps/api/src/routes/conversation.routes.ts`
+- [x] Create `apps/api/src/controllers/conversation.controller.ts`
+- [x] Create `apps/api/src/routes/conversation.routes.ts`
   - `GET /api/conversations` → list user's conversations
   - `POST /api/conversations` → create new conversation
   - `GET /api/conversations/:id` → get conversation details
@@ -435,15 +435,15 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/repositories/message.repository.ts`
+- [x] Create `apps/api/src/repositories/message.repository.ts`
   - `findByConversation(conversationId, cursor, limit)` — cursor-based pagination (before/after a message ID)
   - `create(data)` — create message
   - `findById(id)`
   - `updateById(id, data)` — for edits
   - `softDelete(id)` — set `isDeleted = true`
-- [ ] Create `apps/api/src/validators/message.validator.ts`
+- [x] Create `apps/api/src/validators/message.validator.ts`
   - `sendMessageSchema`: `{ content?, type, replyTo? }` (content required for text, optional for media)
-- [ ] Create `apps/api/src/services/message.service.ts`
+- [x] Create `apps/api/src/services/message.service.ts`
   - `sendMessage(senderId, conversationId, { content, type, attachments, replyTo })`:
     1. Verify sender is participant of conversation
     2. Create message document
@@ -454,8 +454,8 @@ graph LR
     2. Fetch messages with cursor-based pagination
     3. Populate sender info (username, avatar)
     4. Return `{ messages, nextCursor, hasMore }`
-- [ ] Create `apps/api/src/controllers/message.controller.ts`
-- [ ] Create `apps/api/src/routes/message.routes.ts`
+- [x] Create `apps/api/src/controllers/message.controller.ts`
+- [x] Create `apps/api/src/routes/message.routes.ts`
   - `GET /api/conversations/:id/messages?cursor=&limit=` → get messages
   - `POST /api/conversations/:id/messages` → send message
 
@@ -467,37 +467,37 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Create `apps/web/src/services/conversation-service.ts`
+- [x] Create `apps/web/src/services/conversation-service.ts`
   - `getConversations(page)` → `GET /api/conversations`
   - `createConversation(data)` → `POST /api/conversations`
   - `getConversation(id)` → `GET /api/conversations/:id`
-- [ ] Create `apps/web/src/services/message-service.ts`
+- [x] Create `apps/web/src/services/message-service.ts`
   - `getMessages(conversationId, cursor)` → `GET /api/conversations/:id/messages`
   - `sendMessage(conversationId, data)` → `POST /api/conversations/:id/messages`
-- [ ] Create `apps/web/src/hooks/api/use-conversations.ts`
+- [x] Create `apps/web/src/hooks/api/use-conversations.ts`
   - `useConversations()` → `useQuery(['conversations'], ...)`
   - `useCreateConversation()` → `useMutation` + invalidate conversations query
-- [ ] Create `apps/web/src/hooks/api/use-messages.ts`
+- [x] Create `apps/web/src/hooks/api/use-messages.ts`
   - `useMessages(conversationId)` → `useInfiniteQuery(['messages', convId], ...)` with cursor-based pagination
   - `useSendMessage()` → `useMutation` with **optimistic update** (append message immediately, rollback on failure)
-- [ ] Update `apps/web/src/store/chat-store.ts`:
+- [x] Update `apps/web/src/store/chat-store.ts`:
   - Remove `rooms` and `messages` from store (these now come from React Query)
   - Keep only `activeRoomId` → rename to `activeConversationId`
   - Remove mock data imports
-- [ ] Update `apps/web/src/components/chat-list/ChatList.tsx`:
+- [x] Update `apps/web/src/components/chat-list/ChatList.tsx`:
   - Fetch conversations from `useConversations()` instead of Zustand store
   - Show loading skeletons while fetching
   - Show empty state if no conversations
-- [ ] Update `apps/web/src/components/chat-window/ChatWindow.tsx`:
+- [x] Update `apps/web/src/components/chat-window/ChatWindow.tsx`:
   - Fetch messages from `useMessages(conversationId)` instead of Zustand
   - Implement infinite scroll — load more messages when scrolling to top
   - Maintain scroll position when older messages load
-- [ ] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
+- [x] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
   - Use `useSendMessage()` mutation
   - Optimistic update: show message immediately with "sending" status
   - On success: update status to "sent"
   - On failure: show retry button
-- [ ] Create "New Chat" flow:
+- [x] Create "New Chat" flow:
   - Add "New Chat" button in chat list header
   - Open user search dialog → search users via `/api/users/search?q=`
   - Select user → call `createConversation({ type: 'direct', participantIds: [userId] })`
