@@ -2,10 +2,10 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import path from "path";
 
-// Load appropriate env file based on NODE_ENV
-const nodeEnv = process.env.NODE_ENV || "development";
-const envFile = nodeEnv === "production" ? ".env.production" : ".env.dev";
-dotenv.config({ path: path.resolve(process.cwd(), envFile) });
+// Load .env file only in non-production (Railway injects vars directly in production)
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: path.resolve(process.cwd(), ".env.dev") });
+}
 
 const envSchema = z.object({
   PORT: z.string().transform((val) => parseInt(val, 10)).default("5000"),
