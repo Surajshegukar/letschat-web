@@ -10,10 +10,10 @@ const envFile = nodeEnv === "production" ? ".env.production" : ".env.dev";
 const envPath = path.resolve(process.cwd(), envFile);
 
 if (fs.existsSync(envPath)) {
-  dotenv.config({ path: envPath });
+  dotenv.config({ path: envPath, override: true });
 } else {
   // Fallback to standard .env if present
-  dotenv.config();
+  dotenv.config({ override: true });
 }
 
 const envSchema = z.object({
