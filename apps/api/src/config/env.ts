@@ -26,6 +26,32 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_REGION: z.string().optional(),
   AWS_S3_BUCKET: z.string().optional(),
+}).superRefine((data, ctx) => {
+  if (data.NODE_ENV === "production") {
+    const requiredInProduction = [
+      { key: "MONGO_URI", placeholder: "mongodb+srv://SurajShegukar:XJmP3pXWW%2EH%25ERT@cluster0.svo13vm.mongodb.net/letschat?retryWrites=true&w=majority&appName=Cluster0" },
+      { key: "JWT_SECRET", placeholder: "letschat_dev_secret_key_123456" },
+      { key: "JWT_REFRESH_SECRET", placeholder: "letschat_dev_refresh_secret_key_123456" },
+      { key: "CLIENT_URL", placeholder: "https://letschat-webclient.vercel.app" },
+      { key: "CORS_ORIGIN", placeholder: "https://letschat-webclient.vercel.app" },
+      { key: "RESEND_API_KEY", placeholder: "re_6j1ec2bA_3CTHLAfdp5KafTVhNfaAzv2r" },
+      { key: "GOOGLE_CLIENT_ID", placeholder: "209611950053-sf3hugluv01c25vgcqitrtkafm8m7pdk.apps.googleusercontent.com" },
+      { key: "GOOGLE_CLIENT_SECRET", placeholder: "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" },
+      { key: "GITHUB_CLIENT_ID", placeholder: "Ov23liozpMWHeR6C9DG9" },
+      { key: "GITHUB_CLIENT_SECRET", placeholder: "2187241dcffa7622c2558becfb18686416d0d565" },
+    ] as const;
+
+    requiredInProduction.forEach(({ key, placeholder }) => {
+      const val = data[key as keyof typeof data];
+      if (!val || val === placeholder) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: [key],
+          message: `${key} must be explicitly defined with a production-ready value when NODE_ENV is production.`,
+        });
+      }
+    });
+  }
 });
 
 let env: z.infer<typeof envSchema>;
