@@ -2,9 +2,18 @@ import { z } from "zod";
 import dotenv from "dotenv";
 import path from "path";
 
-// Load .env file only in non-production (Railway injects vars directly in production)
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config({ path: path.resolve(process.cwd(), ".env.dev") });
+import fs from "fs";
+
+// Load .env file depending on NODE_ENV and availability
+const nodeEnv = process.env.NODE_ENV || "development";
+const envFile = nodeEnv === "production" ? ".env.production" : ".env.dev";
+const envPath = path.resolve(process.cwd(), envFile);
+
+if (fs.existsSync(envPath)) {
+  dotenv.config({ path: envPath });
+} else {
+  // Fallback to standard .env if present
+  dotenv.config();
 }
 
 const envSchema = z.object({
