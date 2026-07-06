@@ -27,7 +27,7 @@ export interface Env {
   AWS_S3_BUCKET?: string;
 }
 
-const nodeEnv = (process.env.NODE_ENV || "development") as Env["NODE_ENV"];
+const nodeEnv = (process.env.NODE_ENV || "production") as Env["NODE_ENV"];
 console.log("Env config :  ", nodeEnv);
 
 const env: Env = {
