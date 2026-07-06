@@ -9,10 +9,10 @@ export function registerRoutes(app: Application): void {
   app.use("/api/conversations", conversationRoutes);
 
   app.get("/health", (_req: Request, res: Response) => {
-    res.json({ status: "OK", timestamp: new Date().toISOString(),
-      // all env variables 
+    console.log("Health check endpoint called");
+    console.log({
       env:{
-          Node_ENV: process.env.NODE_ENV,
+          NODE_ENV: process.env.NODE_ENV,
           PORT: process.env.PORT,
           MONGO_URI: process.env.MONGO_URI,
           CLIENT_URL: process.env.CLIENT_URL,
@@ -28,6 +28,10 @@ export function registerRoutes(app: Application): void {
           AWS_REGION: process.env.AWS_REGION,
           AWS_S3_BUCKET: process.env.AWS_S3_BUCKET,
       }
+    });
+    res.json({ status: "OK", timestamp: new Date().toISOString(),
+      // all env variables 
+      
 
      });
   });
