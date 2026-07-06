@@ -197,7 +197,9 @@ export class MessageService {
       err.statusCode = 404;
       throw err;
     }
-    const senderId = (message.senderId as mongoose.Types.ObjectId).toString();
+    const senderId = (message.senderId as any)._id 
+      ? (message.senderId as any)._id.toString() 
+      : message.senderId.toString();
     if (senderId !== userId) {
       const err: any = new Error("You can only edit your own messages");
       err.statusCode = 403;
@@ -232,7 +234,9 @@ export class MessageService {
       err.statusCode = 404;
       throw err;
     }
-    const senderId = (message.senderId as mongoose.Types.ObjectId).toString();
+    const senderId = (message.senderId as any)._id 
+      ? (message.senderId as any)._id.toString() 
+      : message.senderId.toString();
     if (senderId !== userId) {
       const err: any = new Error("You can only delete your own messages");
       err.statusCode = 403;
