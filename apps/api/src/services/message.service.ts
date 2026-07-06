@@ -4,6 +4,7 @@ import { socketService } from "./socket.service";
 import { Message, IMessage } from "@/models/Message";
 import { User } from "@/models/User";
 import mongoose from "mongoose";
+import { logger } from "@/utils/logger";
 
 export class MessageService {
   /**
@@ -24,13 +25,19 @@ export class MessageService {
       }[];
     }
   ): Promise<IMessage> {
-    // 1. Verify conversation exists and sender is a participant
-    const isMember = await conversationRepository.isParticipant(
-      conversationId,
-      senderId
+    // 1. Fetch conversation and verify sender is a participant
+    const conversation = await conversationRepository.findById(conversationId);
+    if (!conversation) {
+      const err: any = new Error("Conversation not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const isMember = conversation.participants.some(
+      (p) => p.userId._id.toString() === senderId
     );
     if (!isMember) {
-      const err: any = new Error("Conversation not found or you are not a participant");
+      const err: any = new Error("You are not a participant in this conversation");
       err.statusCode = 403;
       throw err;
     }
@@ -46,19 +53,18 @@ export class MessageService {
     }
 
     // Check which conversation participants are currently online and pre-mark as delivered
-    const conversation = await conversationRepository.findById(conversationId);
+    // We can reuse the populated user info on the conversation object directly (prevents loop of DB queries)
     const deliveredTo: { userId: mongoose.Types.ObjectId; deliveredAt: Date }[] = [];
-    if (conversation) {
-      for (const p of conversation.participants) {
-        const pId = p.userId._id.toString();
-        if (pId === senderId) continue;
-        const user = await User.findById(pId).select("isOnline");
-        if (user?.isOnline) {
-          deliveredTo.push({
-            userId: p.userId._id,
-            deliveredAt: new Date(),
-          });
-        }
+    for (const p of conversation.participants) {
+      const participantUser = p.userId as any;
+      const pId = participantUser._id.toString();
+      if (pId === senderId) continue;
+      
+      if (participantUser.isOnline) {
+        deliveredTo.push({
+          userId: participantUser._id,
+          deliveredAt: new Date(),
+        });
       }
     }
 
@@ -79,11 +85,14 @@ export class MessageService {
         ? input.content || ""
         : `[${input.type.charAt(0).toUpperCase() + input.type.slice(1)}]`;
 
-    await conversationRepository.updateLastMessage(conversationId, {
+    // Trigger conversation lastMessage update in parallel without blocking the HTTP response
+    conversationRepository.updateLastMessage(conversationId, {
       content: contentPreview,
       senderId: new mongoose.Types.ObjectId(senderId),
       timestamp: message.createdAt,
       type: input.type,
+    }).catch((err) => {
+      logger.error(`Error updating last message for conversation ${conversationId}: ${err.message}`);
     });
 
     // Serialize to a plain object with string IDs for reliable socket delivery
@@ -130,12 +139,10 @@ export class MessageService {
     socketService.emitToConversation(conversationId, "new_message", messagePayload);
 
     // Emit directly to each participant's personal room (handles race where they haven't joined room yet)
-    if (conversation) {
-      conversation.participants.forEach((p) => {
-        const pId = p.userId._id.toString();
-        socketService.emitToUser(pId, "new_message", messagePayload);
-      });
-    }
+    conversation.participants.forEach((p) => {
+      const pId = p.userId._id.toString();
+      socketService.emitToUser(pId, "new_message", messagePayload);
+    });
 
     return message;
   }
