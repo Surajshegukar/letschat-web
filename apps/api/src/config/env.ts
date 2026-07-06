@@ -28,12 +28,16 @@ const envSchema = z.object({
   AWS_S3_BUCKET: z.string().optional(),
 });
 
-const parsed = envSchema.safeParse(process.env);
+let env: z.infer<typeof envSchema>;
 
-if (!parsed.success) {
-  console.error("❌ Invalid environment configuration:", parsed.error.format());
-  // process.exit(1);
+try {
+  env = envSchema.parse(process.env);
+} catch (err) {
+  if (err instanceof z.ZodError) {
+    console.error("❌ Invalid environment configuration:", err.format());
+  }
+  throw err;
 }
 
-export const env = parsed.data;
+export { env };
 
