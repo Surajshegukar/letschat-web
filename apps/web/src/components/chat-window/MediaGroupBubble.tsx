@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Play, CheckCheck, Check } from "lucide-react";
 import { Message } from "@/types/chat";
 import { MediaGroup } from "@/types/ui";
 import { useMessageActions } from "@/hooks/use-message-actions";
 import { ReactionsBadge } from "./message-bubble/ReactionsBadge";
 import { HoverActions } from "./message-bubble/HoverActions";
+import { LightGallery, LightGalleryItem } from "./LightGallery";
 
 interface MediaGroupBubbleProps {
   group: MediaGroup;
@@ -33,15 +34,14 @@ function MediaItem({ msg, onClick }: { msg: Message; onClick: () => void }) {
   );
 }
 
-function MediaGrid({ items, reactions, isMe }: { items: Message[]; reactions: { emoji: string; userIds: string[] }[]; isMe: boolean }) {
-  const handleClick = (url?: string) => { if (url) window.open(url, "_blank"); };
+function MediaGrid({ items, reactions, isMe, onItemClick }: { items: Message[]; reactions: { emoji: string; userIds: string[] }[]; isMe: boolean; onItemClick: (index: number) => void }) {
   const len = items.length;
   const gridClass = "rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-950 border border-zinc-200/80 dark:border-zinc-850 relative w-[280px] sm:w-[320px]";
 
   if (len === 2) {
     return (
       <div className={`grid grid-cols-2 gap-1.5 aspect-[1.3/1] ${gridClass}`}>
-        {items.map((msg) => <MediaItem key={msg.id} msg={msg} onClick={() => handleClick(msg.attachment!.url)} />)}
+        {items.map((msg, i) => <MediaItem key={msg.id} msg={msg} onClick={() => onItemClick(i)} />)}
         <ReactionsBadge reactions={reactions} isMe={isMe} />
       </div>
     );
@@ -50,7 +50,7 @@ function MediaGrid({ items, reactions, isMe }: { items: Message[]; reactions: { 
   if (len === 3) {
     return (
       <div className={`grid grid-cols-3 gap-1.5 aspect-[2/1] ${gridClass}`}>
-        {items.map((msg) => <MediaItem key={msg.id} msg={msg} onClick={() => handleClick(msg.attachment!.url)} />)}
+        {items.map((msg, i) => <MediaItem key={msg.id} msg={msg} onClick={() => onItemClick(i)} />)}
         <ReactionsBadge reactions={reactions} isMe={isMe} />
       </div>
     );
@@ -62,8 +62,8 @@ function MediaGrid({ items, reactions, isMe }: { items: Message[]; reactions: { 
   return (
     <div className={`grid grid-cols-2 grid-rows-2 gap-1.5 aspect-square ${gridClass}`}>
       {displayItems.map((msg, index) => (
-        <div key={msg.id} className="relative h-full w-full" onClick={() => handleClick(msg.attachment!.url)}>
-          <MediaItem msg={msg} onClick={() => handleClick(msg.attachment!.url)} />
+        <div key={msg.id} className="relative h-full w-full" onClick={() => onItemClick(index)}>
+          <MediaItem msg={msg} onClick={() => onItemClick(index)} />
           {index === 3 && remainingCount > 1 && (
             <div className="absolute inset-0 bg-black/55 backdrop-blur-[1px] flex items-center justify-center text-white font-extrabold text-xl font-sans tracking-wide">
               +{remainingCount}
@@ -79,9 +79,19 @@ function MediaGrid({ items, reactions, isMe }: { items: Message[]; reactions: { 
 export function MediaGroupBubble({ group }: MediaGroupBubbleProps) {
   const isMe = group.senderId === "me";
   const primaryMessage = group.items[0]!;
+  const [galleryIndex, setGalleryIndex] = useState<number | null>(null);
 
-  const { showReactionPicker, setShowReactionPicker, handleReply, handleReact } =
+  const { showReactionPicker, setShowReactionPicker, canEditOrDelete, handleReply, handleReact, handleEdit, handleDelete } =
     useMessageActions(primaryMessage);
+
+  const galleryItems: LightGalleryItem[] = group.items
+    .filter((msg) => msg.attachment?.url)
+    .map((msg) => ({
+      url: msg.attachment!.url!,
+      type: msg.attachment!.type as "image" | "video",
+      caption: msg.content || undefined,
+      message: msg,
+    }));
 
   const aggregatedReactions = useMemo(() => {
     const list: { emoji: string; userIds: string[] }[] = [];
@@ -113,15 +123,34 @@ export function MediaGroupBubble({ group }: MediaGroupBubbleProps) {
       </div>
 
       <div className="flex items-center animate-fadeIn">
-        <MediaGrid items={group.items} reactions={aggregatedReactions} isMe={isMe} />
+        <MediaGrid
+          items={group.items}
+          reactions={aggregatedReactions}
+          isMe={isMe}
+          onItemClick={(i) => setGalleryIndex(i)}
+        />
         <HoverActions
           isMe={isMe}
+          canEditOrDelete={canEditOrDelete}
           showReactionPicker={showReactionPicker}
           onToggleReactionPicker={(e) => { e.stopPropagation(); setShowReactionPicker((p) => !p); }}
           onReact={handleReact}
           onReply={handleReply}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
         />
       </div>
+
+      {galleryIndex !== null && galleryItems.length > 0 && (
+        <LightGallery
+          items={galleryItems}
+          initialIndex={galleryIndex}
+          onClose={() => setGalleryIndex(null)}
+          onReply={(msg) => handleReply()}
+          onEdit={(msg) => handleEdit()}
+          onDelete={(msg) => handleDelete()}
+        />
+      )}
 
       {isMe && (
         <div className="mt-1 flex justify-end">

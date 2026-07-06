@@ -127,7 +127,7 @@ export function useChatWindow(
     console.log("Attachment sending scaffolded:", type);
   };
 
-  const sendFiles = (files: File[]) => {
+  const sendFiles = (files: File[], captions: string[] = []) => {
     if (!activeRoomId) return;
 
     const formData = new FormData();
@@ -136,27 +136,17 @@ export function useChatWindow(
     });
 
     uploadAttachmentsMutation.mutate(
-      {
-        conversationId: activeRoomId,
-        formData,
-      },
+      { conversationId: activeRoomId, formData },
       {
         onSuccess: (response) => {
           const filesData = response.data.files || [];
-          filesData.forEach((file: any) => {
+          filesData.forEach((file: any, index: number) => {
             sendMessageMutation.mutate({
               conversationId: activeRoomId,
               data: {
-                content: "",
-                type: file.type, // "image" | "video" | "document"
-                attachments: [
-                  {
-                    url: file.url,
-                    filename: file.filename,
-                    mimeType: file.mimeType,
-                    size: file.size,
-                  },
-                ],
+                content: captions[index] || "",
+                type: file.type,
+                attachments: [{ url: file.url, filename: file.filename, mimeType: file.mimeType, size: file.size }],
                 replyTo: replyingToMessage ? replyingToMessage.id : undefined,
               },
             });

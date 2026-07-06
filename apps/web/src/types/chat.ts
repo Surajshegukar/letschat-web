@@ -24,6 +24,9 @@ export interface Message {
     userIds: string[];
   }[];
   createdAt?: string;
+  isEdited?: boolean;
+  isDeleted?: boolean;
+  deletedAt?: string;
 }
 
 export interface ChatRoom {

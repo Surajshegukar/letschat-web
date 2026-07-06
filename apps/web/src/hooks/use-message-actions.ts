@@ -1,15 +1,52 @@
 import { useState } from "react";
 import { useChatStore } from "@/store/chat-store";
-import { useReactToMessage } from "@/hooks/api/use-conversations";
+import { useReactToMessage, useDeleteMessage } from "@/hooks/api/use-conversations";
 import { Message } from "@/types/chat";
+import { toast } from "sonner";
+
+const EDIT_DELETE_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+
+export function isWithinEditWindow(createdAt?: string): boolean {
+  if (!createdAt) return false;
+  return Date.now() - new Date(createdAt).getTime() < EDIT_DELETE_WINDOW_MS;
+}
 
 export function useMessageActions(message: Message) {
   const [showReactionPicker, setShowReactionPicker] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const setReplyingToMessage = useChatStore((state) => state.setReplyingToMessage);
+  const setEditingMessage = useChatStore((state) => state.setEditingMessage);
   const reactMutation = useReactToMessage();
+  const deleteMutation = useDeleteMessage();
+
+  const canEditOrDelete = message.senderId === "me" && !message.isDeleted && isWithinEditWindow(message.createdAt);
 
   const handleReply = () => setReplyingToMessage(message);
+
+  const handleEdit = () => {
+    if (!canEditOrDelete) {
+      toast.error("Messages can only be edited within 15 minutes of sending.");
+      return;
+    }
+    setEditingMessage(message);
+  };
+
+  const handleDelete = () => {
+    if (!canEditOrDelete) {
+      toast.error("Messages can only be deleted within 15 minutes of sending.");
+      return;
+    }
+    setShowDeleteConfirm(true);
+  };
+
+  const confirmDelete = () => {
+    if (!activeRoomId) return;
+    deleteMutation.mutate(
+      { conversationId: activeRoomId, messageId: message.id },
+      { onSettled: () => setShowDeleteConfirm(false) }
+    );
+  };
 
   const handleReact = (emoji: string) => {
     if (activeRoomId) {
@@ -31,7 +68,14 @@ export function useMessageActions(message: Message) {
   return {
     showReactionPicker,
     setShowReactionPicker,
+    showDeleteConfirm,
+    setShowDeleteConfirm,
+    isDeleting: deleteMutation.isPending,
+    canEditOrDelete,
     handleReply,
+    handleEdit,
+    handleDelete,
+    confirmDelete,
     handleReact,
     handleScrollToReply,
   };

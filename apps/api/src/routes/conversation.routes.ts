@@ -38,6 +38,16 @@ router.post(
   authenticateJWT,
   messageController.reactToMessage
 );
+router.patch(
+  "/:conversationId/messages/:messageId",
+  authenticateJWT,
+  messageController.editMessage
+);
+router.delete(
+  "/:conversationId/messages/:messageId",
+  authenticateJWT,
+  messageController.deleteMessage
+);
 router.post(
   "/:conversationId/attachments",
   authenticateJWT,

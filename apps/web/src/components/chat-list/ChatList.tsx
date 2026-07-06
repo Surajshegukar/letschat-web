@@ -1,15 +1,13 @@
 "use client";
 
 import React from "react";
-import { useChatStore } from "@/store/chat-store";
 import { useAuthStore } from "@/store/auth-store";
 import { useConversations } from "@/hooks/api/use-conversations";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatConversation, RawConversation } from "@/utils/chat-helpers";
 import { useChatList } from "@/hooks/use-chat-list";
 import { ChatFilterPills } from "./ChatFilterPills";
 import { ChatRoomItem } from "./ChatRoomItem";
-import { ChevronLeft, Search } from "lucide-react";
-import { BrandLogo } from "../BrandLogo";
 import { ChatRoom } from "@/types/chat";
 import ChatListHeader from "./ChatListHeader";
 import { NewChatList } from "../newchat/NewChatList";
@@ -21,23 +19,54 @@ interface ChatListProps {
 
 export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
   const [isNewChatView, setIsNewChatView] = React.useState(false);
+  const [updateCount, forceUpdate] = React.useReducer((x) => x + 1, 0);
   const { data: convResponse, isLoading } = useConversations();
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const queryClient = useQueryClient();
   const rawConversations = convResponse?.data?.conversations;
+
+  // Re-render whenever any messages cache entry is updated (delete/edit optimistic updates)
+  React.useEffect(() => {
+    const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
+      if (
+        event.query.queryKey[0] === "messages" &&
+        (event.type === "updated" || event.type === "added")
+      ) {
+        forceUpdate();
+      }
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const formattedRooms = React.useMemo(() => {
     if (!currentUserId || !rawConversations) return [];
-    const formatted = rawConversations.map((c: { _id: string }) =>
-      formatConversation(c as unknown as RawConversation, currentUserId)
-    );
 
-    // Sort: pinned conversations first, maintaining timestamp order
+    const formatted = rawConversations.map((c: any) => {
+      const room = formatConversation(c as unknown as RawConversation, currentUserId);
+
+      // Override lastMessage from the messages cache — this is always up to date
+      // with optimistic updates and avoids stale server data overwriting the preview
+      const msgCache = queryClient.getQueryData<{ pages: { data: { messages: any[] } }[] }>(
+        ["messages", c._id]
+      );
+      if (msgCache?.pages?.length) {
+        const latestMsg = msgCache.pages[0]?.data.messages[0];
+        if (latestMsg) {
+          room.lastMessage = latestMsg.isDeleted
+            ? "This message was deleted"
+            : latestMsg.content || (latestMsg.attachments?.length ? `[${latestMsg.type}]` : room.lastMessage);
+        }
+      }
+
+      return room;
+    });
+
     return formatted.sort((a: ChatRoom, b: ChatRoom) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
       return 0;
     });
-  }, [rawConversations, currentUserId]);
+  }, [rawConversations, currentUserId, queryClient, updateCount]);
 
   const {
     activeFilter,
@@ -47,7 +76,6 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
     filteredRooms,
   } = useChatList(formattedRooms);
 
-  // Count types for filter pills
   const allCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived).length;
   const unreadCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived && r.unreadCount && r.unreadCount > 0).length;
   const directCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived && r.type === "direct").length;
@@ -75,7 +103,6 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
         onSearchChange={setSearchQuery}
         onNewChatClick={() => setIsNewChatView(true)}
       />
-      {/* Filter pills */}
       <ChatFilterPills
         activeFilter={activeFilter}
         onFilterChange={setActiveFilter}
@@ -88,7 +115,6 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
         archiveCount={archiveCount}
       />
 
-      {/* Rooms list */}
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {isLoading ? (
           <div className="space-y-4 p-2">

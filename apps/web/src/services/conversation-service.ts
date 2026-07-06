@@ -85,6 +85,22 @@ export const conversationService = {
   },
 
   /**
+   * Edit a message content.
+   */
+  async editMessage(conversationId: string, messageId: string, content: string) {
+    const response = await api.patch(`/conversations/${conversationId}/messages/${messageId}`, { content });
+    return response.data;
+  },
+
+  /**
+   * Delete a message.
+   */
+  async deleteMessage(conversationId: string, messageId: string) {
+    const response = await api.delete(`/conversations/${conversationId}/messages/${messageId}`);
+    return response.data;
+  },
+
+  /**
    * React to a message with an emoji.
    */
   async reactToMessage(conversationId: string, messageId: string, emoji: string) {

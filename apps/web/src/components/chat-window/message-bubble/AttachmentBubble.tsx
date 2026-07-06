@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, FileText } from "lucide-react";
+import { Download, FileText, Play } from "lucide-react";
 import { Attachment } from "@/types/chat";
 import { AudioPlayBubble } from "../AudioPlayBubble";
 import { ReactionsBadge } from "./ReactionsBadge";
@@ -11,6 +11,7 @@ interface AttachmentBubbleProps {
   senderAvatar?: string;
   content?: string;
   reactions: { emoji: string; userIds: string[] }[];
+  onOpenGallery?: () => void;
 }
 
 export function AttachmentBubble({
@@ -20,6 +21,7 @@ export function AttachmentBubble({
   senderAvatar,
   content,
   reactions,
+  onOpenGallery,
 }: AttachmentBubbleProps) {
   const type = (attachment.type || "document") as string;
 
@@ -38,9 +40,18 @@ export function AttachmentBubble({
 
   if (type === "video") {
     return (
-      <div id={`msg-card-${messageId}`} className="relative w-[280px] sm:w-[320px] rounded-2xl border border-zinc-200/80 bg-white shadow-md p-2.5 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden text-left transition-all duration-300">
+      <div
+        id={`msg-card-${messageId}`}
+        className="relative w-[280px] sm:w-[320px] rounded-2xl border border-zinc-200/80 bg-white shadow-md p-2.5 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden text-left transition-all duration-300 cursor-pointer"
+        onClick={onOpenGallery}
+      >
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-800">
-          <video src={attachment.url} controls className="w-full h-full object-cover" />
+          <video src={attachment.url} className="w-full h-full object-cover" muted />
+          <div className="absolute inset-0 bg-black/25 flex items-center justify-center">
+            <div className="h-11 w-11 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Play className="h-5 w-5 text-white fill-white ml-0.5" />
+            </div>
+          </div>
         </div>
         {content && <p className="text-xs text-slate-700 dark:text-zinc-350 mt-2 px-1 font-semibold leading-relaxed">{content}</p>}
         <ReactionsBadge reactions={reactions} isMe={isMe} />
@@ -52,9 +63,13 @@ export function AttachmentBubble({
     const imageUrl = attachment.url || "https://images.unsplash.com/photo-1542744094-3a31f103e35f?w=600";
     const isGif = attachment.name?.endsWith(".gif") || imageUrl.includes(".gif");
     return (
-      <div id={`msg-card-${messageId}`} className="relative w-[280px] sm:w-[320px] rounded-2xl border border-zinc-200/80 bg-white shadow-md p-2.5 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden text-left transition-all duration-300">
+      <div
+        id={`msg-card-${messageId}`}
+        className="relative w-[280px] sm:w-[320px] rounded-2xl border border-zinc-200/80 bg-white shadow-md p-2.5 dark:border-zinc-800 dark:bg-zinc-900 overflow-hidden text-left transition-all duration-300 cursor-pointer"
+        onClick={onOpenGallery}
+      >
         <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-slate-100 dark:bg-zinc-950 border border-zinc-150 dark:border-zinc-800">
-          <img src={imageUrl} className="w-full h-full object-cover" alt="Attachment Preview" />
+          <img src={imageUrl} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" alt="Attachment Preview" />
           {isGif && (
             <span className="absolute bottom-2 left-2 px-1.5 py-0.5 bg-black/60 backdrop-blur-[2px] rounded-md text-[9px] text-white font-extrabold uppercase tracking-wider">
               GIF

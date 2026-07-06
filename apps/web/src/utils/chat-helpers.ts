@@ -96,7 +96,11 @@ export const formatConversation = (conv: RawConversation, currentUserId: string)
     name,
     type: conv.type,
     avatar,
-    lastMessage: conv.lastMessage ? conv.lastMessage.content : "No messages yet",
+    lastMessage: conv.lastMessage
+      ? (conv.lastMessage as any).isDeleted
+        ? "This message was deleted"
+        : conv.lastMessage.content
+      : "No messages yet",
     timestamp,
     unreadCount: conv.unreadCount || 0,
     isOnline,
@@ -187,6 +191,8 @@ export const formatMessage = (msg: RawMessage, currentUserId: string): Message =
     replyTo: replyToObj,
     reactions: reactionsMapped,
     createdAt: msg.createdAt,
+    isEdited: (msg as any).isEdited || false,
+    isDeleted: (msg as any).isDeleted || false,
     attachment: firstAttachment
       ? {
           name: firstAttachment.filename,

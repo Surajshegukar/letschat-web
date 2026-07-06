@@ -63,6 +63,58 @@ export class MessageController {
   /**
    * React to a message.
    */
+  /**
+   * Edit a message's content (only sender, within 15 minutes).
+   */
+  editMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { conversationId, messageId } = req.params;
+      const { content } = req.body;
+      const userId = req.user!.id;
+
+      const message = await messageService.editMessage(conversationId!, messageId!, userId, content);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { message },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Delete a message (only sender, within 15 minutes).
+   */
+  deleteMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { conversationId, messageId } = req.params;
+      const userId = req.user!.id;
+
+      await messageService.deleteMessage(conversationId!, messageId!, userId);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * React to a message.
+   */
   reactToMessage = async (
     req: Request,
     res: Response,

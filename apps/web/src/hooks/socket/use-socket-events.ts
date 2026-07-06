@@ -91,6 +91,15 @@ export function useSocketEvents() {
       queryClient.invalidateQueries({ queryKey: ["messages", conversationId], exact: false });
     };
 
+    const onMessageEdited = ({ conversationId }: { conversationId: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId], exact: false });
+    };
+
+    const onMessageDeleted = ({ conversationId }: { conversationId: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId], exact: false });
+      queryClient.invalidateQueries({ queryKey: ["conversations"], exact: false });
+    };
+
     socket.on("initial_online_users", onInitialOnlineUsers);
     socket.on("new_conversation", onNewConversation);
     socket.on("new_message", onNewMessage);
@@ -99,6 +108,8 @@ export function useSocketEvents() {
     socket.on("messages_delivered", onMessagesDelivered);
     socket.on("messages_read", onMessagesRead);
     socket.on("message_reaction", onMessageReaction);
+    socket.on("message_edited", onMessageEdited);
+    socket.on("message_deleted", onMessageDeleted);
     socket.on("typing_indicator", onTypingIndicator);
     socket.on("typing_stopped", onTypingStopped);
 
@@ -111,6 +122,8 @@ export function useSocketEvents() {
       socket.off("messages_delivered", onMessagesDelivered);
       socket.off("messages_read", onMessagesRead);
       socket.off("message_reaction", onMessageReaction);
+      socket.off("message_edited", onMessageEdited);
+      socket.off("message_deleted", onMessageDeleted);
       socket.off("typing_indicator", onTypingIndicator);
       socket.off("typing_stopped", onTypingStopped);
     };

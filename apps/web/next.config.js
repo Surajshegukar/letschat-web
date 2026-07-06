@@ -1,43 +1,25 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    images: {
-        remotePatterns: [
-            // {
-            //     protocol: "https",
-            //     hostname: "img.clerk.com", // For Clerk avatars
-            // },
-            // {
-            //     protocol: "https",
-            //     hostname: "letschat.s3.**", // All S3 buckets (cloud/public)
-            // },
-            // {
-            //     protocol: "http",
-            //     hostname: "letschat.s3.**", // HTTP for local S3 (if any)
-            // },
-            // {
-            //     protocol: "https",
-            //     hostname: "letschat-example.vercel.app", // Production frontend URL
-            // },
-            // {
-            //     protocol: "http",
-            //     hostname: "letschat-example.vercel.app", // HTTP for localhost
-            // },
-            // {
-            //     protocol: "http",
-            //     hostname: "[IP_ADDRESS]", // Local API URL
-            // },
+  images: {
+    remotePatterns: [
+      // Local development — backend serving uploaded files
+      {
+        protocol: "http",
+        hostname: "localhost",
+        port: "5000",
+      },
+      // Production API server — set NEXT_PUBLIC_API_HOSTNAME in Vercel env vars
+      // e.g. "api.letschat.example.com"
+      ...(process.env.NEXT_PUBLIC_API_HOSTNAME
+        ? [
             {
-                protocol: "http",
-                hostname: "localhost",
-                port: "5000", // Local API URL
+              protocol: "https",
+              hostname: process.env.NEXT_PUBLIC_API_HOSTNAME,
             },
-            {
-                protocol: "http",
-                hostname: "[IP_ADDRESS]",
-                port: "5000", // Local API URL
-            }
-        ],
-    },
+          ]
+        : []),
+    ],
+  },
 };
 
 export default nextConfig;

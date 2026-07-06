@@ -14,6 +14,7 @@ export function useConversations(page: number = 1, limit: number = 20) {
   return useQuery({
     queryKey: ["conversations"],
     queryFn: () => conversationService.getConversations(page, limit),
+    staleTime: 30 * 1000,
   });
 }
 
@@ -132,6 +133,92 @@ export function useArchiveConversation() {
       const apiError = error as { response?: { data?: { message?: string } } };
       const message = apiError.response?.data?.message || "Failed to archive conversation";
       toast.error(message);
+    },
+  });
+}
+
+type MessagesCache = { pages: { data: { messages: any[] } }[] };
+
+/**
+ * Hook to edit a message — optimistic update so UI reflects change immediately.
+ */
+export function useEditMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { conversationId: string; messageId: string; content: string }) =>
+      conversationService.editMessage(args.conversationId, args.messageId, args.content),
+    onMutate: async (variables) => {
+      const key = ["messages", variables.conversationId];
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<MessagesCache>(key);
+      queryClient.setQueryData<MessagesCache>(key, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: {
+              ...page.data,
+              messages: page.data.messages.map((msg: any) =>
+                msg._id === variables.messageId
+                  ? { ...msg, content: variables.content, isEdited: true }
+                  : msg
+              ),
+            },
+          })),
+        };
+      });
+      return { previous, key };
+    },
+    onError: (_err, _vars, context: any) => {
+      if (context?.previous) queryClient.setQueryData(context.key, context.previous);
+      toast.error("Failed to edit message");
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
+    },
+  });
+}
+
+/**
+ * Hook to delete a message — optimistic update so UI reflects change immediately.
+ */
+export function useDeleteMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (args: { conversationId: string; messageId: string }) =>
+      conversationService.deleteMessage(args.conversationId, args.messageId),
+    onMutate: async (variables) => {
+      const msgKey = ["messages", variables.conversationId];
+      await queryClient.cancelQueries({ queryKey: msgKey });
+      const previousMessages = queryClient.getQueryData<MessagesCache>(msgKey);
+
+      queryClient.setQueryData<MessagesCache>(msgKey, (old) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page) => ({
+            ...page,
+            data: {
+              ...page.data,
+              messages: page.data.messages.map((msg: any) =>
+                msg._id === variables.messageId
+                  ? { ...msg, isDeleted: true, content: "This message was deleted", attachments: [] }
+                  : msg
+              ),
+            },
+          })),
+        };
+      });
+
+      return { previousMessages, msgKey };
+    },
+    onError: (_err, _vars, context: any) => {
+      if (context?.previousMessages) queryClient.setQueryData(context.msgKey, context.previousMessages);
+      toast.error("Failed to delete message");
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
     },
   });
 }

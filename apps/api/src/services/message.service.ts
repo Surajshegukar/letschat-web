@@ -183,6 +183,91 @@ export class MessageService {
   }
 
   /**
+   * Edit a message's content. Only the sender can edit, within 15 minutes.
+   */
+  async editMessage(
+    conversationId: string,
+    messageId: string,
+    userId: string,
+    content: string
+  ): Promise<IMessage> {
+    const message = await messageRepository.findById(messageId);
+    if (!message || message.conversationId.toString() !== conversationId) {
+      const err: any = new Error("Message not found in this conversation");
+      err.statusCode = 404;
+      throw err;
+    }
+    const senderId = typeof message.senderId === "object" ? (message.senderId as any)._id?.toString() : message.senderId?.toString();
+    if (senderId !== userId) {
+      const err: any = new Error("You can only edit your own messages");
+      err.statusCode = 403;
+      throw err;
+    }
+    const FIFTEEN_MIN = 15 * 60 * 1000;
+    if (Date.now() - new Date(message.createdAt).getTime() > FIFTEEN_MIN) {
+      const err: any = new Error("Messages can only be edited within 15 minutes of sending");
+      err.statusCode = 403;
+      throw err;
+    }
+    const updated = await messageRepository.updateById(messageId, { content, isEdited: true });
+    socketService.emitToConversation(conversationId, "message_edited", {
+      conversationId,
+      messageId,
+      content,
+    });
+    return updated!;
+  }
+
+  /**
+   * Soft-delete a message. Only the sender can delete, within 15 minutes.
+   */
+  async deleteMessage(
+    conversationId: string,
+    messageId: string,
+    userId: string
+  ): Promise<void> {
+    const message = await messageRepository.findById(messageId);
+    if (!message || message.conversationId.toString() !== conversationId) {
+      const err: any = new Error("Message not found in this conversation");
+      err.statusCode = 404;
+      throw err;
+    }
+    const senderId = typeof message.senderId === "object" ? (message.senderId as any)._id?.toString() : message.senderId?.toString();
+    if (senderId !== userId) {
+      const err: any = new Error("You can only delete your own messages");
+      err.statusCode = 403;
+      throw err;
+    }
+    const FIFTEEN_MIN = 15 * 60 * 1000;
+    if (Date.now() - new Date(message.createdAt).getTime() > FIFTEEN_MIN) {
+      const err: any = new Error("Messages can only be deleted within 15 minutes of sending");
+      err.statusCode = 403;
+      throw err;
+    }
+    await messageRepository.softDelete(messageId);
+
+    // Update conversation's lastMessage preview if this was the last message
+    const conversation = await conversationRepository.findById(conversationId);
+    if (conversation?.lastMessage) {
+      // Fetch the latest message after deletion to check
+      const latest = await messageRepository.findByConversation(conversationId, undefined, 1);
+      const latestMsg = latest[0];
+      // If the latest message is the one we just deleted (isDeleted), update the preview
+      if (latestMsg && latestMsg._id.toString() === messageId) {
+        await conversationRepository.updateLastMessage(conversationId, {
+          ...conversation.lastMessage,
+          content: "This message was deleted",
+        });
+      }
+    }
+
+    socketService.emitToConversation(conversationId, "message_deleted", {
+      conversationId,
+      messageId,
+    });
+  }
+
+  /**
    * React to a message in a conversation.
    */
   async reactToMessage(

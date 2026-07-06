@@ -7,7 +7,13 @@ interface UseMessageInputProps {
   inputText: string;
   onChangeInput: (text: string) => void;
   onSendVoiceNote?: (duration: string) => void;
-  onSendFiles?: (files: File[]) => void;
+  onSendFiles?: (files: File[], captions: string[]) => void;
+}
+
+export interface PendingFile {
+  file: File;
+  previewUrl: string;
+  caption: string;
 }
 
 export function useMessageInput({
@@ -23,6 +29,7 @@ export function useMessageInput({
   const [activeCategory, setActiveCategory] = useState("Smileys");
   const [emojiSearch, setEmojiSearch] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
+  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
 
   const inputRef = useRef<HTMLInputElement | null>(null);
   const emojiTrayRef = useRef<HTMLDivElement | null>(null);
@@ -32,6 +39,16 @@ export function useMessageInput({
 
   const replyingToMessage = useChatStore((state) => state.replyingToMessage);
   const setReplyingToMessage = useChatStore((state) => state.setReplyingToMessage);
+  const editingMessage = useChatStore((state) => state.editingMessage);
+  const setEditingMessage = useChatStore((state) => state.setEditingMessage);
+
+  // Pre-fill input when entering edit mode
+  useEffect(() => {
+    if (editingMessage) {
+      onChangeInput(editingMessage.content);
+      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }, [editingMessage]);
 
   useEffect(() => {
     if (isRecording) {
@@ -60,11 +77,33 @@ export function useMessageInput({
     const files = e.target.files;
     if (!files || files.length === 0) return;
     const filesArray = Array.from(files);
-    const error = validateFiles(filesArray);
+    const { validateFiles: validate } = require("@/constants/file-validation");
+    const error = validate(filesArray);
     if (error) { setFileError(error); e.target.value = ""; return; }
     setFileError(null);
-    onSendFiles?.(filesArray);
+    const previews: PendingFile[] = filesArray.map((file) => ({
+      file,
+      previewUrl: URL.createObjectURL(file),
+      caption: "",
+    }));
+    setPendingFiles(previews);
     e.target.value = "";
+  };
+
+  const handleSendPendingFiles = () => {
+    if (pendingFiles.length === 0) return;
+    onSendFiles?.(pendingFiles.map((p) => p.file), pendingFiles.map((p) => p.caption));
+    pendingFiles.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    setPendingFiles([]);
+  };
+
+  const handleCancelPendingFiles = () => {
+    pendingFiles.forEach((p) => URL.revokeObjectURL(p.previewUrl));
+    setPendingFiles([]);
+  };
+
+  const handleUpdateCaption = (index: number, caption: string) => {
+    setPendingFiles((prev) => prev.map((p, i) => i === index ? { ...p, caption } : p));
   };
 
   const handleStartRecording = () => { setIsRecording(true); setIsMenuOpen(false); setIsEmojiOpen(false); };
@@ -105,9 +144,7 @@ export function useMessageInput({
 
   const filteredEmojis = useMemo(() => {
     const query = emojiSearch.trim().toLowerCase();
-    if (!query) {
-      return EMOJI_CATEGORIES.find((c) => c.name === activeCategory)?.emojis ?? [];
-    }
+    if (!query) return EMOJI_CATEGORIES.find((c) => c.name === activeCategory)?.emojis ?? [];
     return Object.entries(EMOJI_KEYWORDS)
       .filter(([, keywords]) => keywords.includes(query))
       .map(([emoji]) => emoji);
@@ -126,16 +163,22 @@ export function useMessageInput({
     setEmojiSearch,
     fileError,
     setFileError,
+    pendingFiles,
     inputRef,
     emojiTrayRef,
     photoInputRef,
     docInputRef,
     replyingToMessage,
     setReplyingToMessage,
+    editingMessage,
+    setEditingMessage,
     filteredEmojis,
     handlePhotoClick,
     handleDocClick,
     handleFileChange,
+    handleSendPendingFiles,
+    handleCancelPendingFiles,
+    handleUpdateCaption,
     handleStartRecording,
     handleCancelRecording,
     handleSendVoiceNote,
