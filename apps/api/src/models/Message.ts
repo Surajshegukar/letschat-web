@@ -34,8 +34,8 @@ export interface IMessage extends Document {
   attachments: IAttachment[];
   replyTo?: mongoose.Types.ObjectId;
   reactions: IReaction[];
-  deliveredTo: IDeliveredTo[];
-  readBy: IReadBy[];
+  deliveredTo?: IDeliveredTo[];
+  readBy?: IReadBy[];
   isEdited: boolean;
   isDeleted: boolean;
   deletedAt?: Date;
@@ -145,14 +145,6 @@ const messageSchema = new Schema<IMessage>(
       type: [reactionSchema],
       default: [],
     },
-    deliveredTo: {
-      type: [deliveredSchema],
-      default: [],
-    },
-    readBy: {
-      type: [readSchema],
-      default: [],
-    },
     isEdited: {
       type: Boolean,
       default: false,
@@ -173,5 +165,6 @@ const messageSchema = new Schema<IMessage>(
 // ── Indexes ──────────────────────────────────────────────────────────────
 // Query: Find messages in a conversation sorted by date (newest first for cursor-based pagination)
 messageSchema.index({ conversationId: 1, createdAt: -1 });
+messageSchema.index({ conversationId: 1, _id: 1 });
 
 export const Message: Model<IMessage> = mongoose.model<IMessage>("Message", messageSchema);

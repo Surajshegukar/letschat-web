@@ -5,6 +5,72 @@ import { Message, IMessage } from "@/models/Message";
 import { User } from "@/models/User";
 import mongoose from "mongoose";
 
+export function formatMessagePayload(message: any, conversation: any) {
+  const msgObj = typeof message.toObject === "function" ? message.toObject() : message;
+  const messageIdStr = msgObj._id.toString();
+  const senderIdStr = (msgObj.senderId?._id || msgObj.senderId || "").toString();
+
+  const deliveredTo: { userId: string; deliveredAt: Date }[] = [];
+  const readBy: { userId: string; readAt: Date }[] = [];
+
+  if (conversation) {
+    conversation.participants.forEach((p: any) => {
+      const pIdStr = (p.userId?._id || p.userId || "").toString();
+      if (pIdStr === senderIdStr) return;
+
+      // Check if delivered
+      if (p.lastDeliveredMessageId && p.lastDeliveredMessageId.toString() >= messageIdStr) {
+        deliveredTo.push({
+          userId: pIdStr,
+          deliveredAt: p.lastDeliveredAt || p.joinedAt || new Date(),
+        });
+      }
+
+      // Check if read
+      if (p.lastReadMessageId && p.lastReadMessageId.toString() >= messageIdStr) {
+        readBy.push({
+          userId: pIdStr,
+          readAt: p.lastReadAt || p.joinedAt || new Date(),
+        });
+      }
+    });
+  }
+
+  return {
+    ...msgObj,
+    _id: messageIdStr,
+    conversationId: msgObj.conversationId.toString(),
+    senderId: senderIdStr,
+    type: msgObj.type,
+    content: msgObj.content,
+    attachments: msgObj.attachments?.map((att: any) => ({
+      url: att.url,
+      filename: att.filename,
+      mimeType: att.mimeType,
+      size: att.size,
+    })) || [],
+    reactions: msgObj.reactions?.map((r: any) => ({
+      emoji: r.emoji,
+      userIds: r.userIds.map((id: any) => id.toString()),
+    })) || [],
+    replyTo: msgObj.replyTo
+      ? {
+          _id: msgObj.replyTo._id?.toString() || msgObj.replyTo.toString(),
+          content: msgObj.replyTo.content || "",
+          senderId: msgObj.replyTo.senderId
+            ? typeof msgObj.replyTo.senderId === "object"
+              ? msgObj.replyTo.senderId._id?.toString()
+              : msgObj.replyTo.senderId.toString()
+            : undefined,
+        }
+      : undefined,
+    deliveredTo,
+    readBy,
+    createdAt: msgObj.createdAt,
+    updatedAt: msgObj.updatedAt,
+  };
+}
+
 export class MessageService {
   /**
    * Send a new message inside a conversation.
@@ -23,7 +89,7 @@ export class MessageService {
         size: number;
       }[];
     }
-  ): Promise<IMessage> {
+  ): Promise<any> {
     // 1. Verify conversation exists and sender is a participant
     const isMember = await conversationRepository.isParticipant(
       conversationId,
@@ -45,34 +111,6 @@ export class MessageService {
       }
     }
 
-    // Check which conversation participants are currently online and pre-mark as delivered
-    const conversation = await conversationRepository.findById(conversationId);
-    const deliveredTo: { userId: mongoose.Types.ObjectId; deliveredAt: Date }[] = [];
-    if (conversation) {
-      const participantIds = conversation.participants
-        .map((p) => p.userId._id)
-        .filter((id) => id.toString() !== senderId);
-
-      if (participantIds.length > 0) {
-        const onlineUsers = await User.find({
-          _id: { $in: participantIds },
-          isOnline: true,
-        }).select("_id");
-
-        const onlineUserIds = new Set(onlineUsers.map((u) => u._id.toString()));
-
-        for (const p of conversation.participants) {
-          const pId = p.userId._id.toString();
-          if (onlineUserIds.has(pId)) {
-            deliveredTo.push({
-              userId: p.userId._id,
-              deliveredAt: new Date(),
-            });
-          }
-        }
-      }
-    }
-
     // 3. Create the message
     const message = await messageRepository.create({
       conversationId: new mongoose.Types.ObjectId(conversationId),
@@ -81,7 +119,6 @@ export class MessageService {
       content: input.content,
       attachments: input.attachments || [],
       replyTo: input.replyTo ? new mongoose.Types.ObjectId(input.replyTo) : undefined,
-      deliveredTo,
     });
 
     // 4. Update the last message in the conversation (denormalization)
@@ -97,45 +134,43 @@ export class MessageService {
       type: input.type,
     });
 
-    // Serialize to a plain object with string IDs for reliable socket delivery
-    const messagePayload = {
-      _id: message._id.toString(),
-      conversationId: conversationId,
-      senderId: senderId,
-      type: message.type,
-      content: message.content,
-      attachments: message.attachments?.map((att) => ({
-        url: att.url,
-        filename: att.filename,
-        mimeType: att.mimeType,
-        size: att.size,
-      })) || [],
-      reactions: message.reactions?.map((r) => ({
-        emoji: r.emoji,
-        userIds: r.userIds.map((id) => id.toString()),
-      })) || [],
-      replyTo: message.replyTo
-        ? {
-            _id: (message.replyTo as any)._id?.toString() || message.replyTo.toString(),
-            content: (message.replyTo as any).content || "",
-            senderId: (message.replyTo as any).senderId
-              ? typeof (message.replyTo as any).senderId === "object"
-                ? (message.replyTo as any).senderId._id?.toString()
-                : (message.replyTo as any).senderId.toString()
-              : undefined,
-          }
-        : undefined,
-      deliveredTo: message.deliveredTo.map((d) => ({
-        userId: d.userId.toString(),
-        deliveredAt: d.deliveredAt,
-      })),
-      readBy: message.readBy.map((r) => ({
-        userId: r.userId.toString(),
-        readAt: r.readAt,
-      })),
-      createdAt: message.createdAt,
-      updatedAt: message.updatedAt,
-    };
+    // 5. Update cursors in the Conversation collection
+    const conversation = await conversationRepository.findById(conversationId);
+    if (conversation) {
+      const messageObjectId = message._id;
+      const now = new Date();
+
+      const participantIds = conversation.participants
+        .map((p) => p.userId._id)
+        .filter((id) => id.toString() !== senderId);
+
+      let onlineUserIds: Set<string> = new Set();
+      if (participantIds.length > 0) {
+        const onlineUsers = await User.find({
+          _id: { $in: participantIds },
+          isOnline: true,
+        }).select("_id");
+        onlineUserIds = new Set(onlineUsers.map((u) => u._id.toString()));
+      }
+
+      conversation.participants.forEach((p) => {
+        const pIdStr = p.userId._id.toString();
+        if (pIdStr === senderId) {
+          p.lastReadMessageId = messageObjectId;
+          p.lastReadAt = now;
+          p.lastDeliveredMessageId = messageObjectId;
+          p.lastDeliveredAt = now;
+        } else if (onlineUserIds.has(pIdStr)) {
+          p.lastDeliveredMessageId = messageObjectId;
+          p.lastDeliveredAt = now;
+        }
+      });
+
+      await conversation.save();
+    }
+
+    // 6. Format payload & emit socket events
+    const messagePayload = formatMessagePayload(message, conversation);
 
     // Emit real-time socket event to conversation room
     socketService.emitToConversation(conversationId, "new_message", messagePayload);
@@ -148,7 +183,7 @@ export class MessageService {
       });
     }
 
-    return message;
+    return messagePayload;
   }
 
   /**
@@ -158,7 +193,7 @@ export class MessageService {
     conversationId: string,
     userId: string,
     pagination: { cursor?: string; limit?: number }
-  ): Promise<{ messages: IMessage[]; nextCursor: string | null; hasMore: boolean }> {
+  ): Promise<{ messages: any[]; nextCursor: string | null; hasMore: boolean }> {
     const limit = pagination.limit || 50;
 
     // 1. Verify user is participant
@@ -186,8 +221,12 @@ export class MessageService {
 
     const nextCursor = hasMore && messages.length > 0 ? messages[messages.length - 1]!._id.toString() : null;
 
+    // Fetch conversation participant states to construct dynamic read/delivered arrays
+    const conversation = await conversationRepository.findById(conversationId);
+    const formattedMessages = messages.map((m) => formatMessagePayload(m, conversation));
+
     return {
-      messages,
+      messages: formattedMessages,
       nextCursor,
       hasMore,
     };

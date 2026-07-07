@@ -22,6 +22,9 @@ Track all in-progress and upcoming work here. Update this file when starting or 
 - [x] Batch MongoDB database query in `sendMessage` to eliminate N+1 latency bottleneck
 - [x] Implement frontend optimistic updates for `useSendMessage` to render messages instantly on dispatch
 - [x] Implement WebSocket `new_message` direct cache insertion on frontend to avoid expensive query invalidations and HTTP GET requests
+- [x] Implement database read query performance tuning using Mongoose `.lean()` in user, conversation, and message repositories
+- [x] Implement Socket.IO `send_message` server-side event listener to allow message dispatching over WebSockets
+- [x] Refactor frontend `useSendMessage` hook to implement a hybrid WebSocket-first sending protocol with REST HTTP fallback
 
 ### Phase 2.3 — Frontend: Connect Profile & Settings to API (COMPLETE)
 - [x] `apps/web/src/services/user-service.ts`

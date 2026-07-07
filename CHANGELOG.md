@@ -24,6 +24,8 @@ Format: `## [version] — YYYY-MM-DD` with sections Added / Changed / Fixed / Re
   - Refactored `new_message` WebSocket handler to directly update messages and conversations caches locally in React Query, avoiding HTTP invalidations/refetching.
   - Fixed React hydration console warning in `ChatRoomItem` by changing outer nested `<button>` element to an accessible, keyboard-interactive `div`.
   - Resolved React render-phase update console warning in `ChatList` by wrapping query cache updates in a deferred `setTimeout`.
+  - Refactored the core messaging protocol to be WebSocket-first with REST HTTP fallback (using a promisified client emit call and a dedicated `send_message` listener on the Socket.IO backend).
+  - Optimized backend query speeds and memory consumption by applying `.lean()` queries to user, conversation, and message repositories' list/read methods.
 
 ---
 

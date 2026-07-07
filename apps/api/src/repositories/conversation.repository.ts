@@ -38,7 +38,8 @@ export const conversationRepository = {
       .sort({ "lastMessage.timestamp": -1, updatedAt: -1 })
       .skip(skip)
       .limit(limit)
-      .exec();
+      .lean()
+      .exec() as unknown as Promise<IConversation[]>;
   },
 
   /**
@@ -54,7 +55,8 @@ export const conversationRepository = {
       "participants.userId": { $all: [userAId, userBId] },
     })
       .populate("participants.userId", "username email displayName avatar about isOnline lastSeen")
-      .exec();
+      .lean()
+      .exec() as unknown as Promise<IConversation | null>;
   },
 
   /**

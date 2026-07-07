@@ -19,12 +19,25 @@ export class ConversationService {
     // Map and count unread messages for each conversation
     const mappedConversations = await Promise.all(
       conversations.map(async (conv) => {
-        const convObj = conv.toObject();
-        const unreadCount = await Message.countDocuments({
+        const convObj = typeof (conv as any).toObject === "function"
+          ? (conv as any).toObject()
+          : conv;
+
+        const selfParticipant = conv.participants?.find(
+          (p: any) => (p.userId?._id || p.userId || "").toString() === userId
+        );
+        const lastReadMessageId = selfParticipant?.lastReadMessageId;
+
+        const countQuery: any = {
           conversationId: conv._id,
           senderId: { $ne: new mongoose.Types.ObjectId(userId) },
-          "readBy.userId": { $ne: new mongoose.Types.ObjectId(userId) }
-        });
+        };
+        if (lastReadMessageId) {
+          countQuery._id = { $gt: lastReadMessageId };
+        }
+
+        const unreadCount = await Message.countDocuments(countQuery);
+
         return {
           ...convObj,
           unreadCount

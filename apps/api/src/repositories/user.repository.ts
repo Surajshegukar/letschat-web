@@ -111,7 +111,8 @@ export const userRepository = {
       .select("username email displayName avatar about isOnline lastSeen")
       .sort({ isOnline: -1, username: 1 }) // online users first, then alphabetical
       .limit(limit)
-      .exec();
+      .lean()
+      .exec() as unknown as Promise<IUser[]>;
   },
 
   /**

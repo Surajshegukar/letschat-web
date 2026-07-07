@@ -64,7 +64,8 @@ export const messageRepository = {
       })
       .sort({ _id: -1 }) // Newest messages first
       .limit(limit)
-      .exec();
+      .lean()
+      .exec() as unknown as Promise<IMessage[]>;
   },
 
   /**

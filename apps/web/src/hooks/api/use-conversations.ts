@@ -7,6 +7,7 @@ import {
 import { conversationService } from "@/services/conversation-service";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
+import { useSocket } from "@/providers/socket-provider";
 
 /**
  * Hook to retrieve user conversations list.
@@ -69,6 +70,7 @@ export function useMessages(conversationId: string | null, limit: number = 50) {
 export function useSendMessage() {
   const queryClient = useQueryClient();
   const currentUserId = useAuthStore((state) => state.user?.id);
+  const { socket, isConnected } = useSocket();
 
   return useMutation({
     mutationFn: (args: {
@@ -84,7 +86,23 @@ export function useSendMessage() {
           size: number;
         }[];
       };
-    }) => conversationService.sendMessage(args.conversationId, args.data),
+    }) => {
+      // If WebSockets are connected, use direct Socket.IO connection (WebSocket-first)
+      if (socket && isConnected) {
+        return new Promise<any>((resolve, reject) => {
+          socket.emit("send_message", args, (response: any) => {
+            if (response && response.status === "success") {
+              resolve(response);
+            } else {
+              reject(new Error(response?.message || "Failed to send message via WebSockets"));
+            }
+          });
+        });
+      }
+
+      // Otherwise, fallback to REST API
+      return conversationService.sendMessage(args.conversationId, args.data);
+    },
     onMutate: async (variables) => {
       // Cancel any outgoing refetches so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ["messages", variables.conversationId] });

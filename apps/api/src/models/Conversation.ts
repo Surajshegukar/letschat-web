@@ -7,6 +7,10 @@ export interface IParticipant {
   mutedUntil?: Date;
   isArchived?: boolean;
   isPinned?: boolean;
+  lastReadMessageId?: mongoose.Types.ObjectId;
+  lastReadAt?: Date;
+  lastDeliveredMessageId?: mongoose.Types.ObjectId;
+  lastDeliveredAt?: Date;
 }
 
 export interface ILastMessage {
@@ -55,6 +59,20 @@ const participantSchema = new Schema<IParticipant>({
   isPinned: {
     type: Boolean,
     default: false,
+  },
+  lastReadMessageId: {
+    type: Schema.Types.ObjectId,
+    ref: "Message",
+  },
+  lastReadAt: {
+    type: Date,
+  },
+  lastDeliveredMessageId: {
+    type: Schema.Types.ObjectId,
+    ref: "Message",
+  },
+  lastDeliveredAt: {
+    type: Date,
   },
 });
 

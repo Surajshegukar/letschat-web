@@ -7,6 +7,7 @@ import { Conversation } from "@/models/Conversation";
 import { Message } from "@/models/Message";
 import { socketService } from "@/services/socket.service";
 import { redisClient } from "@/config/redis";
+import { messageService } from "@/services/message.service";
 import { logger } from "@/utils/logger";
 import mongoose from "mongoose";
 
@@ -63,77 +64,123 @@ export function setupSocketHandlers(io: Server) {
       socket.join(`conv:${convId}`);
     }
 
-    // Mark list of pending undelivered messages as delivered
-    const undelivered = await Message.find({
-      conversationId: { $in: userConversations.map((c) => c._id) },
-      senderId: { $ne: new mongoose.Types.ObjectId(userId) },
-      "deliveredTo.userId": { $ne: new mongoose.Types.ObjectId(userId) },
+    // Extract unique contact IDs from active conversations for targeted presence
+    const contactIds = new Set<string>();
+    userConversations.forEach((conv) => {
+      conv.participants.forEach((p) => {
+        const pIdStr = p.userId.toString();
+        if (pIdStr !== userId) {
+          contactIds.add(pIdStr);
+        }
+      });
+    });
+    const contactIdsArray = Array.from(contactIds);
+
+    // Send list of currently online contact user IDs to the connected user
+    let onlineContactIds: string[] = [];
+    if (contactIdsArray.length > 0) {
+      const onlineContacts = await User.find({
+        _id: { $in: contactIdsArray },
+        isOnline: true,
+      }).select("_id");
+      onlineContactIds = onlineContacts.map((u) => u._id.toString());
+    }
+    socket.emit("initial_online_users", onlineContactIds);
+
+    // Broadcast ONLY to direct contacts that this user is online
+    contactIdsArray.forEach((cId) => {
+      io.to(`user:${cId}`).emit("user_online", { userId });
     });
 
-    if (undelivered.length > 0) {
-      await Message.updateMany(
-        { _id: { $in: undelivered.map((m) => m._id) } },
-        {
-          $addToSet: {
-            deliveredTo: {
-              userId: new mongoose.Types.ObjectId(userId),
-              deliveredAt: new Date(),
-            },
-          },
-        }
-      );
+    // Update delivery receipts for all active conversations on connection
+    for (const conv of userConversations) {
+      const convId = conv._id.toString();
+      const latestMsg = await Message.findOne({ conversationId: conv._id })
+        .sort({ _id: -1 })
+        .select("_id senderId");
 
-      const groups: Record<string, string[]> = {};
-      undelivered.forEach((m) => {
-        const cId = m.conversationId.toString();
-        if (!groups[cId]) groups[cId] = [];
-        groups[cId].push(m._id.toString());
-      });
+      if (latestMsg) {
+        const latestMsgId = latestMsg._id;
+        const selfParticipant = conv.participants.find(
+          (p) => p.userId.toString() === userId
+        );
 
-      for (const [cId, msgIds] of Object.entries(groups)) {
-        socketService.emitToConversation(cId, "messages_delivered", {
-          conversationId: cId,
-          userId,
-          messageIds: msgIds,
-        });
-      }
-    }
+        const currentDeliveredId = selfParticipant?.lastDeliveredMessageId;
+        const isSender = latestMsg.senderId.toString() === userId;
 
-    // Send list of currently online user IDs to the connected user
-    const onlineUsers = await User.find({ isOnline: true }).select("_id");
-    socket.emit("initial_online_users", onlineUsers.map((u) => u._id.toString()));
-
-    // Broadcast globally that this user is online
-    io.emit("user_online", { userId });
-
-    // Handle marking messages as read in a conversation
-    socket.on("read_conversation", async ({ conversationId }: { conversationId: string }) => {
-      try {
-        const unread = await Message.find({
-          conversationId: new mongoose.Types.ObjectId(conversationId),
-          senderId: { $ne: new mongoose.Types.ObjectId(userId) },
-          "readBy.userId": { $ne: new mongoose.Types.ObjectId(userId) },
-        });
-
-        if (unread.length > 0) {
-          const messageIds = unread.map((m) => m._id.toString());
-          await Message.updateMany(
-            { _id: { $in: unread.map((m) => m._id) } },
+        if (!isSender && (!currentDeliveredId || latestMsgId.toString() > currentDeliveredId.toString())) {
+          await Conversation.updateOne(
+            { _id: conv._id, "participants.userId": userId },
             {
-              $addToSet: {
-                readBy: {
-                  userId: new mongoose.Types.ObjectId(userId),
-                  readAt: new Date(),
-                },
+              $set: {
+                "participants.$.lastDeliveredMessageId": latestMsgId,
+                "participants.$.lastDeliveredAt": new Date(),
               },
             }
           );
 
-          io.to(`conv:${conversationId}`).emit("messages_read", {
-            conversationId,
+          socketService.emitToConversation(convId, "messages_delivered", {
+            conversationId: convId,
             userId,
-            messageIds,
+            lastDeliveredMessageId: latestMsgId.toString(),
           });
+        }
+      }
+    }
+
+    // Handle marking messages as read in a conversation
+    socket.on("read_conversation", async ({ conversationId }: { conversationId: string }) => {
+      try {
+        const latestMsg = await Message.findOne({ conversationId })
+          .sort({ _id: -1 })
+          .select("_id senderId");
+
+        if (latestMsg) {
+          const latestMsgId = latestMsg._id;
+          const conv = await Conversation.findOne({
+            _id: conversationId,
+            "participants.userId": userId,
+          });
+
+          if (conv) {
+            const selfParticipant = conv.participants.find(
+              (p) => p.userId.toString() === userId
+            );
+
+            const currentReadId = selfParticipant?.lastReadMessageId;
+
+            if (!currentReadId || latestMsgId.toString() > currentReadId.toString()) {
+              const updateDoc: any = {
+                "participants.$.lastReadMessageId": latestMsgId,
+                "participants.$.lastReadAt": new Date(),
+              };
+
+              const currentDeliveredId = selfParticipant?.lastDeliveredMessageId;
+              if (!currentDeliveredId || latestMsgId.toString() > currentDeliveredId.toString()) {
+                updateDoc["participants.$.lastDeliveredMessageId"] = latestMsgId;
+                updateDoc["participants.$.lastDeliveredAt"] = new Date();
+              }
+
+              await Conversation.updateOne(
+                { _id: conversationId, "participants.userId": userId },
+                { $set: updateDoc }
+              );
+
+              io.to(`conv:${conversationId}`).emit("messages_read", {
+                conversationId,
+                userId,
+                lastReadMessageId: latestMsgId.toString(),
+              });
+
+              if (updateDoc["participants.$.lastDeliveredMessageId"]) {
+                io.to(`conv:${conversationId}`).emit("messages_delivered", {
+                  conversationId,
+                  userId,
+                  lastDeliveredMessageId: latestMsgId.toString(),
+                });
+              }
+            }
+          }
         }
       } catch (err) {
         logger.error(`Error in read_conversation event: ${err}`);
@@ -177,6 +224,51 @@ export function setupSocketHandlers(io: Server) {
       logger.info(`Socket ${socket.id} left conversation room conv:${roomId}`);
     });
 
+    // Handle sending a message via WebSockets directly (WebSocket-first)
+    socket.on(
+      "send_message",
+      async (
+        payload: {
+          conversationId: string;
+          data: {
+            type: "text" | "image" | "audio" | "video" | "document" | "system";
+            content?: string;
+            replyTo?: string;
+            attachments?: {
+              url: string;
+              filename: string;
+              mimeType: string;
+              size: number;
+            }[];
+          };
+        },
+        callback?: (res: { status: "success" | "error"; data?: { message: any }; message?: string }) => void
+      ) => {
+        try {
+          const message = await messageService.sendMessage(
+            userId,
+            payload.conversationId,
+            payload.data
+          );
+
+          if (callback) {
+            callback({
+              status: "success",
+              data: { message },
+            });
+          }
+        } catch (err: any) {
+          logger.error(`Error sending message via Socket.IO: ${err}`);
+          if (callback) {
+            callback({
+              status: "error",
+              message: err.message || "Failed to send message",
+            });
+          }
+        }
+      }
+    );
+
     socket.on("disconnect", async () => {
       logger.info(`Socket disconnected: ${socket.id} (User: ${payload.username})`);
 
@@ -199,8 +291,10 @@ export function setupSocketHandlers(io: Server) {
           lastSeen: new Date(),
         });
 
-        // Broadcast globally that this user went offline
-        io.emit("user_offline", { userId });
+        // Broadcast ONLY to direct contacts that this user went offline
+        contactIdsArray.forEach((cId) => {
+          io.to(`user:${cId}`).emit("user_offline", { userId });
+        });
       }
     });
   });
