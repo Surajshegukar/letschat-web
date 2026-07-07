@@ -37,6 +37,7 @@ export default function RootLayout({
               <SocketProvider>
                 {children}
                 <ToastProvider />
+              
               </SocketProvider>
             </AuthProvider>
           </QueryProvider>

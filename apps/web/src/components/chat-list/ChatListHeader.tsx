@@ -3,6 +3,7 @@
 import React from "react";
 import { Search, MessageSquarePlus } from "lucide-react";
 import { BrandLogo } from "../BrandLogo";
+import PerformanceMonitor from "../ui/PerformanceMonitor";
 
 interface ChatListHeaderProps {
   searchQuery: string;
@@ -25,6 +26,7 @@ export function ChatListHeader({
             Let's Chat
           </span>
         </div>
+        <PerformanceMonitor />
         <button
           onClick={onNewChatClick}
           className="p-2 hover:bg-zinc-150/70 dark:hover:bg-zinc-900/60 rounded-xl transition text-zinc-500 hover:text-emerald-500 dark:hover:text-[#19E68C]"

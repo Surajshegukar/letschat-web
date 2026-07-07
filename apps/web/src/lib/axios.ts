@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/auth-store";
+import { useMetricsStore } from "@/store/metrics-store";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -31,6 +32,7 @@ const processQueue = (error: any, token: string | null = null) => {
 // Request interceptor to automatically attach authorization header
 api.interceptors.request.use(
   (config) => {
+    useMetricsStore.getState().incrementTotalApiCalls();
     const token = useAuthStore.getState().token;
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;

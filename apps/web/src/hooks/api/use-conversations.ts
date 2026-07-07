@@ -8,6 +8,7 @@ import { conversationService } from "@/services/conversation-service";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
 import { useSocket } from "@/providers/socket-provider";
+import { useMetricsStore } from "@/store/metrics-store";
 
 /**
  * Hook to retrieve user conversations list.
@@ -104,6 +105,9 @@ export function useSendMessage() {
       return conversationService.sendMessage(args.conversationId, args.data);
     },
     onMutate: async (variables) => {
+      // Start tracking API calls for this message
+      useMetricsStore.getState().startMessageApiTracking();
+
       // Cancel any outgoing refetches so they don't overwrite our optimistic update
       await queryClient.cancelQueries({ queryKey: ["messages", variables.conversationId] });
 
@@ -216,6 +220,9 @@ export function useSendMessage() {
       const apiError = error as { response?: { data?: { message?: string } } };
       const message = apiError.response?.data?.message || "Failed to send message";
       toast.error(message);
+    },
+    onSettled: () => {
+      useMetricsStore.getState().stopMessageApiTracking();
     },
   });
 }
