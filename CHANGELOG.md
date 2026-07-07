@@ -18,6 +18,12 @@ Format: `## [version] — YYYY-MM-DD` with sections Added / Changed / Fixed / Re
   - WhatsApp-style slide-in sidebar NewChatList drawer layout (as in `newchat.png`) featuring alphabetical contacts grouping with A-Z headers, quick actions (New Group/Contact/Community), current user "Message Yourself" shortcut, and direct conversation creation trigger.
   - Real-time conversation syncing: Backend emits `new_conversation` on creation and `new_message` to participants' personal rooms. Frontend hooks update and query client caches dynamically.
   - Global presence syncing: Backend broadcasts status events globally and emits a list of online users on socket connection, updating the frontend in real-time without requiring refreshes.
+- **Real-Time Performance & Local Cache Optimization**:
+  - Fixed N+1 MongoDB query bottleneck in backend `sendMessage` service by querying online status in bulk.
+  - Implemented client-side optimistic updates in `useSendMessage` to render messages instantly with `isSending: true` status.
+  - Refactored `new_message` WebSocket handler to directly update messages and conversations caches locally in React Query, avoiding HTTP invalidations/refetching.
+  - Fixed React hydration console warning in `ChatRoomItem` by changing outer nested `<button>` element to an accessible, keyboard-interactive `div`.
+  - Resolved React render-phase update console warning in `ChatList` by wrapping query cache updates in a deferred `setTimeout`.
 
 ---
 

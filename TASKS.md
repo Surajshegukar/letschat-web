@@ -18,6 +18,11 @@ Track all in-progress and upcoming work here. Update this file when starting or 
 
 ## ✅ Completed
 
+### Real-Time Chat Performance & Local Cache Optimization (COMPLETE)
+- [x] Batch MongoDB database query in `sendMessage` to eliminate N+1 latency bottleneck
+- [x] Implement frontend optimistic updates for `useSendMessage` to render messages instantly on dispatch
+- [x] Implement WebSocket `new_message` direct cache insertion on frontend to avoid expensive query invalidations and HTTP GET requests
+
 ### Phase 2.3 — Frontend: Connect Profile & Settings to API (COMPLETE)
 - [x] `apps/web/src/services/user-service.ts`
 - [x] `apps/web/src/hooks/api/use-user.ts` — useCurrentUser, useUpdateProfile, useUploadAvatar, useChangePassword

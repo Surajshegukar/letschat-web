@@ -49,15 +49,26 @@ export class MessageService {
     const conversation = await conversationRepository.findById(conversationId);
     const deliveredTo: { userId: mongoose.Types.ObjectId; deliveredAt: Date }[] = [];
     if (conversation) {
-      for (const p of conversation.participants) {
-        const pId = p.userId._id.toString();
-        if (pId === senderId) continue;
-        const user = await User.findById(pId).select("isOnline");
-        if (user?.isOnline) {
-          deliveredTo.push({
-            userId: p.userId._id,
-            deliveredAt: new Date(),
-          });
+      const participantIds = conversation.participants
+        .map((p) => p.userId._id)
+        .filter((id) => id.toString() !== senderId);
+
+      if (participantIds.length > 0) {
+        const onlineUsers = await User.find({
+          _id: { $in: participantIds },
+          isOnline: true,
+        }).select("_id");
+
+        const onlineUserIds = new Set(onlineUsers.map((u) => u._id.toString()));
+
+        for (const p of conversation.participants) {
+          const pId = p.userId._id.toString();
+          if (onlineUserIds.has(pId)) {
+            deliveredTo.push({
+              userId: p.userId._id,
+              deliveredAt: new Date(),
+            });
+          }
         }
       }
     }

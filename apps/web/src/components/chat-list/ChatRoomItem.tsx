@@ -42,9 +42,17 @@ export function ChatRoomItem({ room, isActive, onSelect }: ChatRoomItemProps) {
     .join("");
 
   return (
-    <button
+    <div
+      role="button"
+      tabIndex={0}
       onClick={onSelect}
-      className={`w-full flex items-center justify-between p-3 rounded-2xl text-left transition group relative ${
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={`w-full flex items-center justify-between p-3 rounded-2xl text-left cursor-pointer transition group relative focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-[#19E68C]/50 ${
         isActive
           ? "bg-[#19E68C]/15 text-slate-800 dark:bg-zinc-900 dark:text-[#19E68C]"
           : "hover:bg-zinc-50 dark:hover:bg-zinc-900/40"
@@ -138,7 +146,7 @@ export function ChatRoomItem({ room, isActive, onSelect }: ChatRoomItemProps) {
           ) : null}
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 export default ChatRoomItem;

@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { conversationService } from "@/services/conversation-service";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/auth-store";
 
 /**
  * Hook to retrieve user conversations list.
@@ -67,6 +68,7 @@ export function useMessages(conversationId: string | null, limit: number = 50) {
  */
 export function useSendMessage() {
   const queryClient = useQueryClient();
+  const currentUserId = useAuthStore((state) => state.user?.id);
 
   return useMutation({
     mutationFn: (args: {
@@ -83,15 +85,116 @@ export function useSendMessage() {
         }[];
       };
     }) => conversationService.sendMessage(args.conversationId, args.data),
-    onSuccess: (response, variables) => {
-      // Invalidate the message history for the specific room to trigger refresh
-      queryClient.invalidateQueries({
-        queryKey: ["messages", variables.conversationId],
+    onMutate: async (variables) => {
+      // Cancel any outgoing refetches so they don't overwrite our optimistic update
+      await queryClient.cancelQueries({ queryKey: ["messages", variables.conversationId] });
+
+      // Snapshot the previous value
+      const previousMessages = queryClient.getQueryData(["messages", variables.conversationId]);
+
+      // Optimistically update to the new value
+      queryClient.setQueryData(["messages", variables.conversationId], (old: any) => {
+        if (!old) return old;
+
+        const optimisticMessage = {
+          _id: `temp-${Date.now()}`,
+          conversationId: variables.conversationId,
+          senderId: currentUserId || "",
+          type: variables.data.type || "text",
+          content: variables.data.content || "",
+          attachments: variables.data.attachments || [],
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          reactions: [],
+          deliveredTo: [],
+          readBy: [],
+          isSending: true,
+        };
+
+        return {
+          ...old,
+          pages: old.pages.map((page: any, idx: number) => {
+            if (idx === 0) {
+              return {
+                ...page,
+                data: {
+                  ...page.data,
+                  messages: [optimisticMessage, ...page.data.messages],
+                },
+              };
+            }
+            return page;
+          }),
+        };
       });
-      // Also update conversations list to show newest lastMessage preview
-      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+
+      return { previousMessages };
     },
-    onError: (error: unknown) => {
+    onSuccess: (response, variables) => {
+      const serverMessage = response?.data?.message;
+      if (!serverMessage) return;
+
+      // Update messages cache: replace the optimistic message with the server message
+      queryClient.setQueryData(["messages", variables.conversationId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            data: {
+              ...page.data,
+              messages: page.data.messages.map((m: any) =>
+                m._id.startsWith("temp-") ? serverMessage : m
+              ),
+            },
+          })),
+        };
+      });
+
+      // Update the conversations list cache directly to show the newest lastMessage preview
+      queryClient.setQueryData(["conversations"], (old: any) => {
+        if (!old?.data?.conversations) return old;
+
+        const conversations = old.data.conversations.map((c: any) => {
+          if (c._id === variables.conversationId) {
+            return {
+              ...c,
+              lastMessage: {
+                content: serverMessage.content || (serverMessage.attachments?.length ? `[${serverMessage.type}]` : ""),
+                senderId: serverMessage.senderId,
+                timestamp: serverMessage.createdAt,
+                type: serverMessage.type,
+              },
+            };
+          }
+          return c;
+        });
+
+        // Re-sort conversations so the most recent is at the top
+        const sorted = [...conversations].sort((a: any, b: any) => {
+          const timeA = new Date(a.lastMessage?.timestamp || a.createdAt).getTime();
+          const timeB = new Date(b.lastMessage?.timestamp || b.createdAt).getTime();
+          return timeB - timeA;
+        });
+
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            conversations: sorted,
+          },
+        };
+      });
+    },
+    onError: (error: unknown, variables, context) => {
+      // Rollback to the previous value if mutation fails
+      if (context?.previousMessages) {
+        queryClient.setQueryData(
+          ["messages", variables.conversationId],
+          context.previousMessages
+        );
+      }
+
       const apiError = error as { response?: { data?: { message?: string } } };
       const message = apiError.response?.data?.message || "Failed to send message";
       toast.error(message);

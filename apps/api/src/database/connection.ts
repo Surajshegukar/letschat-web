@@ -2,6 +2,8 @@ import mongoose from "mongoose";
 import { env } from "@/config/env";
 import { logger } from "@/utils/logger";
 
+// Trigger watch reload to re-establish DB connection
+
 export async function connectDatabase() {
   try {
     const mongoUri = env.MONGO_URI;

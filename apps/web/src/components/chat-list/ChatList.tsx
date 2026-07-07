@@ -27,15 +27,23 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
 
   // Re-render whenever any messages cache entry is updated (delete/edit optimistic updates)
   React.useEffect(() => {
+    let isMounted = true;
     const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
       if (
         event.query.queryKey[0] === "messages" &&
         (event.type === "updated" || event.type === "added")
       ) {
-        forceUpdate();
+        setTimeout(() => {
+          if (isMounted) {
+            forceUpdate();
+          }
+        }, 0);
       }
     });
-    return unsubscribe;
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [queryClient]);
 
   const formattedRooms = React.useMemo(() => {

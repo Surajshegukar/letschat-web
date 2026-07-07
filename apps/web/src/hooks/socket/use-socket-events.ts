@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useSocket } from "@/providers/socket-provider";
 import { useRealtimeStore } from "@/store/realtime-store";
@@ -9,6 +9,7 @@ export function useSocketEvents() {
   const queryClient = useQueryClient();
   const { setUserOnline, setUserOffline, setOnlineUsers, setTyping, removeTyping } = useRealtimeStore();
   const activeRoomId = useChatStore((state) => state.activeRoomId);
+  const processedMessageIds = useRef(new Set<string>());
 
   // Emit read_conversation when active conversation changes
   useEffect(() => {
@@ -36,12 +37,117 @@ export function useSocketEvents() {
     };
 
     const onNewMessage = (message: Record<string, unknown>) => {
+      const messageId = message._id as string | undefined;
+      if (!messageId) return;
+
+      if (processedMessageIds.current.has(messageId)) {
+        return;
+      }
+      processedMessageIds.current.add(messageId);
+
+      // Prevent unbounded memory growth by keeping the set size capped
+      if (processedMessageIds.current.size > 1000) {
+        const firstVal = processedMessageIds.current.values().next().value;
+        if (firstVal !== undefined) {
+          processedMessageIds.current.delete(firstVal);
+        }
+      }
+
       const conversationId = message.conversationId as string | undefined;
       if (conversationId) {
-        // Invalidate the specific message list (exact: false covers ["messages", id] key)
-        queryClient.invalidateQueries({ queryKey: ["messages", conversationId], exact: false });
-        // Also refresh the sidebar to update lastMessage preview
-        queryClient.invalidateQueries({ queryKey: ["conversations"], exact: false });
+        // Append new message directly to react-query messages cache
+        queryClient.setQueryData(["messages", conversationId], (old: any) => {
+          if (!old) return old;
+
+          // Check if the message is already in the cache (by official _id or temporary id)
+          const messageExists = old.pages.some((page: any) =>
+            page.data.messages.some(
+              (m: any) =>
+                m._id === message._id ||
+                (m._id.startsWith("temp-") &&
+                  m.content === message.content &&
+                  m.senderId === message.senderId)
+            )
+          );
+
+          if (messageExists) {
+            // Check if there is already an official ID message (e.g. from onSuccess)
+            const hasOfficialId = old.pages.some((page: any) =>
+              page.data.messages.some((m: any) => m._id === message._id)
+            );
+            if (hasOfficialId) return old;
+
+            // Replace the temp message with the actual socket message
+            return {
+              ...old,
+              pages: old.pages.map((page: any) => ({
+                ...page,
+                data: {
+                  ...page.data,
+                  messages: page.data.messages.map((m: any) =>
+                    m._id.startsWith("temp-") &&
+                      m.content === message.content &&
+                      m.senderId === message.senderId
+                      ? message
+                      : m
+                  ),
+                },
+              })),
+            };
+          }
+
+          return {
+            ...old,
+            pages: old.pages.map((page: any, idx: number) => {
+              if (idx === 0) {
+                return {
+                  ...page,
+                  data: {
+                    ...page.data,
+                    messages: [message, ...page.data.messages],
+                  },
+                };
+              }
+              return page;
+            }),
+          };
+        });
+
+        // Directly update the lastMessage preview in the sidebar conversation list cache
+        queryClient.setQueryData(["conversations"], (old: any) => {
+          if (!old?.data?.conversations) return old;
+
+          const conversations = old.data.conversations.map((c: any) => {
+            if (c._id === conversationId) {
+              return {
+                ...c,
+                lastMessage: {
+                  content: (message.content as string) || (Array.isArray(message.attachments) && message.attachments.length ? `[${message.type}]` : ""),
+                  senderId: message.senderId as string,
+                  timestamp: message.createdAt as string,
+                  type: message.type as any,
+                },
+                unreadCount: conversationId === activeRoomId ? 0 : (c.unreadCount || 0) + 1,
+              };
+            }
+            return c;
+          });
+
+          // Re-sort conversations so the most recent is at the top
+          const sorted = [...conversations].sort((a: any, b: any) => {
+            const timeA = new Date(a.lastMessage?.timestamp || a.createdAt).getTime();
+            const timeB = new Date(b.lastMessage?.timestamp || b.createdAt).getTime();
+            return timeB - timeA;
+          });
+
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              conversations: sorted,
+            },
+          };
+        });
 
         // If this message arrived in the currently open active chat, mark it as read immediately
         if (conversationId === activeRoomId) {
