@@ -12,13 +12,16 @@ export function connectSocket(token: string): Socket {
     return socket;
   }
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  let apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+  // Remove trailing /api or /api/ to point to the server root for Socket.IO
+  apiUrl = apiUrl.replace(/\/api\/?$/, "");
 
   socket = io(apiUrl, {
     autoConnect: true,
     auth: {
       token,
     },
+    transports: ["websocket"],
     reconnectionAttempts: 5,
     reconnectionDelay: 1000,
   });
