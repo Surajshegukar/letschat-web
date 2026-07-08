@@ -114,12 +114,14 @@ export function useSendMessage() {
       // Snapshot the previous value
       const previousMessages = queryClient.getQueryData(["messages", variables.conversationId]);
 
+      const tempId = `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+
       // Optimistically update to the new value
       queryClient.setQueryData(["messages", variables.conversationId], (old: any) => {
         if (!old) return old;
 
         const optimisticMessage = {
-          _id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
+          _id: tempId,
           conversationId: variables.conversationId,
           senderId: currentUserId || "",
           type: variables.data.type || "text",
@@ -150,13 +152,15 @@ export function useSendMessage() {
         };
       });
 
-      return { previousMessages };
+      return { previousMessages, tempId };
     },
-    onSuccess: (response, variables) => {
+    onSuccess: (response, variables, context) => {
       const serverMessage = response?.data?.message;
       if (!serverMessage) return;
 
-      // Update messages cache: replace the optimistic message with the server message
+      const tempId = context?.tempId;
+
+      // Update messages cache: replace the specific optimistic message with the server message
       queryClient.setQueryData(["messages", variables.conversationId], (old: any) => {
         if (!old) return old;
         return {
@@ -166,7 +170,7 @@ export function useSendMessage() {
             data: {
               ...page.data,
               messages: page.data.messages.map((m: any) =>
-                m._id.startsWith("temp-") ? serverMessage : m
+                m._id === tempId ? serverMessage : m
               ),
             },
           })),
@@ -209,8 +213,23 @@ export function useSendMessage() {
       });
     },
     onError: (error: unknown, variables, context) => {
-      // Rollback to the previous value if mutation fails
-      if (context?.previousMessages) {
+      const tempId = context?.tempId;
+      if (tempId) {
+        // Rollback only the specific failed optimistic message from cache
+        queryClient.setQueryData(["messages", variables.conversationId], (old: any) => {
+          if (!old) return old;
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              data: {
+                ...page.data,
+                messages: page.data.messages.filter((m: any) => m._id !== tempId),
+              },
+            })),
+          };
+        });
+      } else if (context?.previousMessages) {
         queryClient.setQueryData(
           ["messages", variables.conversationId],
           context.previousMessages
