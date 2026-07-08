@@ -75,8 +75,17 @@ export function useChatWindow(
       (page) => page.data.messages || []
     );
 
+    // Deduplicate by _id — guards against socket races and optimistic update remnants
+    const seen = new Set<string>();
+    const uniqueMessages = allRawMessages.filter((msg: RawMessage) => {
+      const id = (msg as any)._id;
+      if (!id || seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    });
+
     // Map raw messages to client structure and reverse to get chronological ascending order (oldest to newest)
-    return allRawMessages
+    return uniqueMessages
       .map((msg: RawMessage) => formatMessage(msg, currentUserId))
       .reverse();
   }, [messagesData, currentUserId]);

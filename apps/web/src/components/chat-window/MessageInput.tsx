@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { Plus, Smile, Send, Mic, Pencil, X } from "lucide-react";
 import { useMessageInput } from "@/hooks/use-message-input";
 import { useEditMessage } from "@/hooks/api/use-conversations";
@@ -69,6 +69,14 @@ export function MessageInput({
     handleEmojiSelect,
   } = useMessageInput({ inputText, onChangeInput, onSendVoiceNote, onSendFiles });
 
+  // Auto-resize textarea whenever inputText changes (covers programmatic fills like edit mode)
+  useEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.min(el.scrollHeight, 140)}px`;
+  }, [inputText]);
+
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (editingMessage && activeRoomId && inputText.trim()) {
@@ -115,17 +123,19 @@ export function MessageInput({
 
       {/* Edit mode banner */}
       {editingMessage && (
-        <div className="mx-2 mb-2 p-3 bg-zinc-50 dark:bg-zinc-900 border-l-4 border-[#19E68C] rounded-xl flex items-center justify-between animate-fadeIn">
-          <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-bold text-[#19E68C] block uppercase tracking-wider flex items-center gap-1">
+        <div className="mx-2 mb-2 p-3 bg-zinc-50 dark:bg-zinc-900 border border-1 border-[#19E68C] rounded-xl flex items-start justify-between gap-3 animate-fadeIn">
+          <div className="min-w-0 flex-1 overflow-hidden">
+            <span className="text-[10px] font-bold text-[#19E68C] block uppercase tracking-wider flex items-center gap-1 mb-1">
               <Pencil className="h-3 w-3" /> Editing message
             </span>
-            <p className="text-xs text-zinc-650 dark:text-zinc-300 truncate mt-1">{editingMessage.content}</p>
+            <p className="text-xs text-zinc-650 dark:text-zinc-300 leading-relaxed line-clamp-3 break-words">
+              {editingMessage.content}
+            </p>
           </div>
           <button
             type="button"
             onClick={() => { setEditingMessage(null); onChangeInput(""); }}
-            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg text-zinc-450 hover:text-zinc-600 transition flex-shrink-0 ml-4"
+            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg text-zinc-450 hover:text-zinc-600 transition flex-shrink-0 mt-0.5"
           >
             <X className="h-4 w-4" />
           </button>
@@ -161,11 +171,14 @@ export function MessageInput({
           onSend={handleSendVoiceNote}
         />
       ) : (
-        <form onSubmit={handleSubmit} className="flex items-center bg-[#FAFAFC] dark:bg-zinc-900 border border-zinc-250/50 dark:border-zinc-800/80 rounded-full px-3 py-1 w-full transition-all">
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-end bg-[#FAFAFC] dark:bg-zinc-900 border border-zinc-250/50 dark:border-zinc-800/80 rounded-2xl px-3 py-1.5 w-full transition-all"
+        >
           <button
             type="button"
             onClick={() => { setIsMenuOpen((p) => !p); setIsEmojiOpen(false); }}
-            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] ${isMenuOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
+            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] flex-shrink-0 ${isMenuOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
             title="Attach File"
           >
             <Plus className="h-5 w-5" />
@@ -174,25 +187,37 @@ export function MessageInput({
           <button
             type="button"
             onClick={() => { setIsEmojiOpen((p) => !p); setIsMenuOpen(false); }}
-            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] ${isEmojiOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
+            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] flex-shrink-0 ${isEmojiOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
             title="Emoji Picker"
           >
             <Smile className="h-5 w-5" />
           </button>
 
-          <input
-            ref={inputRef}
-            type="text"
+          <textarea
+            ref={inputRef as React.RefObject<HTMLTextAreaElement>}
+            rows={1}
             value={inputText}
-            onChange={(e) => onChangeInput(e.target.value)}
+            onChange={(e) => {
+              onChangeInput(e.target.value);
+              // Auto-resize: reset height then expand
+              e.target.style.height = "auto";
+              e.target.style.height = `${e.target.scrollHeight}px`;
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
             placeholder={editingMessage ? "Edit your message..." : "Type a message..."}
-            className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-slate-800 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 text-xs sm:text-sm px-2 py-1.5"
+            className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-slate-800 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 text-xs sm:text-sm px-2 py-1.5 resize-none overflow-y-auto scrollbar-none leading-relaxed"
+            style={{ maxHeight: 140, minHeight: 36 }}
           />
 
           {inputText.trim() ? (
             <button
               type="submit"
-              className={`p-2 rounded-full transition active:scale-95 flex items-center justify-center text-emerald-500 dark:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50`}
+              className="p-2 rounded-full transition active:scale-95 flex items-center justify-center text-emerald-500 dark:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 flex-shrink-0"
               title={editingMessage ? "Save Edit" : "Send Message"}
             >
               {editingMessage ? <Pencil className="h-5 w-5" /> : <Send className="h-5 w-5" />}
@@ -201,7 +226,7 @@ export function MessageInput({
             <button
               type="button"
               onClick={handleStartRecording}
-              className="p-2 rounded-full transition active:scale-95 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 dark:hover:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50"
+              className="p-2 rounded-full transition active:scale-95 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 dark:hover:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50 flex-shrink-0"
               title="Record Voice Note"
             >
               <Mic className="h-5 w-5" />

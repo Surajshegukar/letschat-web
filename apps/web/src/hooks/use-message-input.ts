@@ -32,7 +32,7 @@ export function useMessageInput({
   const [fileError, setFileError] = useState<string | null>(null);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
 
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const emojiTrayRef = useRef<HTMLDivElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const docInputRef = useRef<HTMLInputElement | null>(null);
@@ -183,15 +183,15 @@ export function useMessageInput({
   };
 
   const handleEmojiSelect = (emoji: string) => {
-    const input = inputRef.current;
-    if (input) {
-      const start = input.selectionStart ?? inputText.length;
-      const end = input.selectionEnd ?? inputText.length;
+    const textarea = inputRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart ?? inputText.length;
+      const end = textarea.selectionEnd ?? inputText.length;
       const newText = inputText.substring(0, start) + emoji + inputText.substring(end);
       onChangeInput(newText);
       setTimeout(() => {
-        input.focus();
-        input.setSelectionRange(start + emoji.length, start + emoji.length);
+        textarea.focus();
+        textarea.setSelectionRange(start + emoji.length, start + emoji.length);
       }, 0);
     } else {
       onChangeInput(inputText + emoji);
