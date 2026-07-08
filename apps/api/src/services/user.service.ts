@@ -1,6 +1,7 @@
 import { userRepository } from "@/repositories/user.repository";
-import { IUser } from "@/models/User";
+import { IUser, User } from "@/models/User";
 import { UpdateProfileInput, ChangePasswordInput } from "@/validators/user.validator";
+import mongoose from "mongoose";
 
 export class UserService {
   /**
@@ -94,6 +95,85 @@ export class UserService {
       throw err;
     }
     return { message: "Account deleted successfully" };
+  }
+
+  /**
+   * Block a user.
+   */
+  async blockUser(userId: string, targetUserId: string): Promise<IUser> {
+    if (userId === targetUserId) {
+      const err: any = new Error("Cannot block yourself");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const targetUser = await userRepository.findById(targetUserId);
+    if (!targetUser) {
+      const err: any = new Error("User to block not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      const err: any = new Error("User not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (!user.blockedUsers) {
+      user.blockedUsers = [];
+    }
+
+    const targetObjectId = targetUser._id as mongoose.Types.ObjectId;
+    const isAlreadyBlocked = user.blockedUsers.some(
+      (id) => id.toString() === targetObjectId.toString()
+    );
+
+    if (!isAlreadyBlocked) {
+      user.blockedUsers.push(targetObjectId);
+      await user.save();
+    }
+
+    return user;
+  }
+
+  /**
+   * Unblock a user.
+   */
+  async unblockUser(userId: string, targetUserId: string): Promise<IUser> {
+    const user = await userRepository.findById(userId);
+    if (!user) {
+      const err: any = new Error("User not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    if (!user.blockedUsers) {
+      user.blockedUsers = [];
+    }
+
+    user.blockedUsers = user.blockedUsers.filter(
+      (id) => id.toString() !== targetUserId
+    );
+
+    await user.save();
+    return user;
+  }
+
+  /**
+   * Get list of blocked users.
+   */
+  async getBlockedUsers(userId: string): Promise<IUser[]> {
+    const user = await User.findById(userId)
+      .populate("blockedUsers", "username email displayName avatar about isOnline lastSeen isDeleted")
+      .exec();
+    if (!user) {
+      const err: any = new Error("User not found");
+      err.statusCode = 404;
+      throw err;
+    }
+    return (user.blockedUsers as unknown as IUser[]) || [];
   }
 }
 

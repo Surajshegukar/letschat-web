@@ -45,4 +45,6 @@ export interface ChatRoom {
   hasMention?: boolean;
   about?: string;
   description?: string;
+  isBlocked?: boolean;
+  hasBlockedMe?: boolean;
 }

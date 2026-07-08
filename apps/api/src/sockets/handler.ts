@@ -83,11 +83,25 @@ export function setupSocketHandlers(io: Server) {
     });
     const contactIdsArray = Array.from(contactIds);
 
+    const selfUser = await User.findById(userId).select("blockedUsers").exec();
+    const blockedByUser = selfUser?.blockedUsers?.map(id => id.toString()) || [];
+
+    const filteredContactIdsArray: string[] = [];
+    for (const cId of contactIdsArray) {
+      if (blockedByUser.includes(cId)) continue;
+
+      const contactUser = await User.findById(cId).select("blockedUsers").exec();
+      const contactBlockedList = contactUser?.blockedUsers?.map(id => id.toString()) || [];
+      if (contactBlockedList.includes(userId)) continue;
+
+      filteredContactIdsArray.push(cId);
+    }
+
     // Send list of currently online contact user IDs to the connected user
     let onlineContactIds: string[] = [];
-    if (contactIdsArray.length > 0) {
+    if (filteredContactIdsArray.length > 0) {
       const onlineContacts = await User.find({
-        _id: { $in: contactIdsArray },
+        _id: { $in: filteredContactIdsArray },
         isOnline: true,
       }).select("_id");
       onlineContactIds = onlineContacts.map((u) => u._id.toString());
@@ -95,7 +109,7 @@ export function setupSocketHandlers(io: Server) {
     socket.emit("initial_online_users", onlineContactIds);
 
     // Broadcast ONLY to direct contacts that this user is online
-    contactIdsArray.forEach((cId) => {
+    filteredContactIdsArray.forEach((cId) => {
       io.to(`user:${cId}`).emit("user_online", { userId });
     });
 
@@ -214,6 +228,28 @@ export function setupSocketHandlers(io: Server) {
 
     // Handle user typing indicators
     socket.on("typing_start", async ({ conversationId }: { conversationId: string }) => {
+      // Block checks for typing indicators
+      const conversation = await Conversation.findById(conversationId);
+      if (conversation && conversation.type === "direct") {
+        const otherParticipant = conversation.participants.find(
+          (p) => p.userId.toString() !== userId
+        );
+        if (otherParticipant) {
+          const otherUserId = otherParticipant.userId.toString();
+          const senderUser = await User.findById(userId).select("blockedUsers").exec();
+          const otherUser = await User.findById(otherUserId).select("blockedUsers").exec();
+          const isBlockedBySender = senderUser?.blockedUsers?.some(
+            (id) => id.toString() === otherUserId
+          );
+          const isBlockedByOther = otherUser?.blockedUsers?.some(
+            (id) => id.toString() === userId
+          );
+          if (isBlockedBySender || isBlockedByOther) {
+            return;
+          }
+        }
+      }
+
       if (redisClient) {
         await redisClient.set(`typing:${conversationId}:${userId}`, "1", "EX", 5);
       }
@@ -226,6 +262,28 @@ export function setupSocketHandlers(io: Server) {
     });
 
     socket.on("typing_stop", async ({ conversationId }: { conversationId: string }) => {
+      // Block checks for typing indicators
+      const conversation = await Conversation.findById(conversationId);
+      if (conversation && conversation.type === "direct") {
+        const otherParticipant = conversation.participants.find(
+          (p) => p.userId.toString() !== userId
+        );
+        if (otherParticipant) {
+          const otherUserId = otherParticipant.userId.toString();
+          const senderUser = await User.findById(userId).select("blockedUsers").exec();
+          const otherUser = await User.findById(otherUserId).select("blockedUsers").exec();
+          const isBlockedBySender = senderUser?.blockedUsers?.some(
+            (id) => id.toString() === otherUserId
+          );
+          const isBlockedByOther = otherUser?.blockedUsers?.some(
+            (id) => id.toString() === userId
+          );
+          if (isBlockedBySender || isBlockedByOther) {
+            return;
+          }
+        }
+      }
+
       if (redisClient) {
         await redisClient.del(`typing:${conversationId}:${userId}`);
       }
@@ -328,7 +386,7 @@ export function setupSocketHandlers(io: Server) {
         });
 
         // Broadcast ONLY to direct contacts that this user went offline
-        contactIdsArray.forEach((cId) => {
+        filteredContactIdsArray.forEach((cId) => {
           io.to(`user:${cId}`).emit("user_offline", { userId });
         });
       }

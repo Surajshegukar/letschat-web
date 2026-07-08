@@ -221,6 +221,8 @@ export function ChatWindow({
           onSendVoiceNote={sendVoiceNote}
           onSendAttachment={sendAttachment}
           onSendFiles={sendFiles}
+          isBlocked={room?.isBlocked}
+          hasBlockedMe={room?.hasBlockedMe}
         />
       )}
     </div>

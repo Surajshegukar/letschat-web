@@ -4,8 +4,9 @@ import { socketService } from "./socket.service";
 import { Message, IMessage } from "@/models/Message";
 import { User } from "@/models/User";
 import mongoose from "mongoose";
+import { sanitizeUserForViewer } from "./conversation.service";
 
-export function formatMessagePayload(message: any, conversation: any) {
+export function formatMessagePayload(message: any, conversation: any, viewerId?: string) {
   const msgObj = typeof message.toObject === "function" ? message.toObject() : message;
   const messageIdStr = msgObj._id.toString();
   const senderIdStr = (msgObj.senderId?._id || msgObj.senderId || "").toString();
@@ -36,11 +37,15 @@ export function formatMessagePayload(message: any, conversation: any) {
     });
   }
 
+  const resolvedSenderId = typeof msgObj.senderId === "object" && msgObj.senderId !== null
+    ? (viewerId ? sanitizeUserForViewer(msgObj.senderId, viewerId) : msgObj.senderId)
+    : senderIdStr;
+
   return {
     ...msgObj,
     _id: messageIdStr,
     conversationId: msgObj.conversationId.toString(),
-    senderId: senderIdStr,
+    senderId: resolvedSenderId,
     type: msgObj.type,
     content: msgObj.content,
     attachments: msgObj.attachments?.map((att: any) => ({
@@ -91,14 +96,51 @@ export class MessageService {
     }
   ): Promise<any> {
     // 1. Verify conversation exists and sender is a participant
-    const isMember = await conversationRepository.isParticipant(
-      conversationId,
-      senderId
+    const conversationBefore = await conversationRepository.findById(conversationId);
+    if (!conversationBefore || !conversationBefore.isActive) {
+      const err: any = new Error("Conversation not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const isMember = conversationBefore.participants.some(
+      (p) => p.userId._id.toString() === senderId
     );
     if (!isMember) {
-      const err: any = new Error("Conversation not found or you are not a participant");
+      const err: any = new Error("You are not a participant of this conversation");
       err.statusCode = 403;
       throw err;
+    }
+
+    // Check WhatsApp-like block validations
+    if (conversationBefore.type === "direct") {
+      const otherParticipant = conversationBefore.participants.find(
+        (p) => p.userId._id.toString() !== senderId
+      );
+      if (otherParticipant) {
+        const otherUserId = otherParticipant.userId._id.toString();
+
+        const senderUser = await User.findById(senderId).select("blockedUsers").exec();
+        const otherUser = await User.findById(otherUserId).select("blockedUsers").exec();
+
+        const isBlockedBySender = senderUser?.blockedUsers?.some(
+          (id) => id.toString() === otherUserId
+        );
+        const isBlockedByOther = otherUser?.blockedUsers?.some(
+          (id) => id.toString() === senderId
+        );
+
+        if (isBlockedBySender) {
+          const err: any = new Error("You have blocked this user. Unblock to send messages.");
+          err.statusCode = 400;
+          throw err;
+        }
+        if (isBlockedByOther) {
+          const err: any = new Error("You cannot send messages to this user.");
+          err.statusCode = 403;
+          throw err;
+        }
+      }
     }
 
     // 2. If replyTo is provided, verify it exists in the database
@@ -121,9 +163,7 @@ export class MessageService {
       replyTo: input.replyTo ? new mongoose.Types.ObjectId(input.replyTo) : undefined,
     });
 
-    // Find participants who currently have the conversation soft-deleted
-    const conversationBefore = await conversationRepository.findById(conversationId);
-    const deletedParticipantIds = conversationBefore?.participants
+    const deletedParticipantIds = conversationBefore.participants
       .filter((p: any) => p.isDeleted)
       .map((p: any) => p.userId._id.toString()) || [];
 
@@ -147,7 +187,7 @@ export class MessageService {
     if (conversationBefore && conversation) {
       const { sanitizeConversationForUser } = await import("./conversation.service");
       for (const pId of deletedParticipantIds) {
-        const sanitizedForUser = sanitizeConversationForUser(conversation, pId);
+        const sanitizedForUser = await sanitizeConversationForUser(conversation, pId);
         socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
       }
     }
@@ -186,7 +226,7 @@ export class MessageService {
     }
 
     // 6. Format payload & emit socket events
-    const messagePayload = formatMessagePayload(message, conversation);
+    const messagePayload = formatMessagePayload(message, conversation, senderId);
 
     // Emit real-time socket event to conversation room
     socketService.emitToConversation(conversationId, "new_message", messagePayload);
@@ -195,7 +235,8 @@ export class MessageService {
     if (conversation) {
       conversation.participants.forEach((p) => {
         const pId = p.userId._id.toString();
-        socketService.emitToUser(pId, "new_message", messagePayload);
+        const messagePayloadForUser = formatMessagePayload(message, conversation, pId);
+        socketService.emitToUser(pId, "new_message", messagePayloadForUser);
       });
     }
 
@@ -246,7 +287,7 @@ export class MessageService {
 
     const nextCursor = hasMore && messages.length > 0 ? messages[messages.length - 1]!._id.toString() : null;
 
-    const formattedMessages = messages.map((m) => formatMessagePayload(m, conversation));
+    const formattedMessages = messages.map((m) => formatMessagePayload(m, conversation, userId));
 
     return {
       messages: formattedMessages,

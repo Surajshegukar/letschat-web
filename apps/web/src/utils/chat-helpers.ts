@@ -110,6 +110,8 @@ export const formatConversation = (conv: RawConversation, currentUserId: string)
     isArchived: selfParticipant?.isArchived || false,
     about: otherParticipantObj?.about || undefined,
     description: (conv as any).description || undefined,
+    isBlocked: (conv as any).isBlocked || false,
+    hasBlockedMe: (conv as any).hasBlockedMe || false,
   };
 };
 

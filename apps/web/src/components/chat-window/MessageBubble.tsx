@@ -10,8 +10,10 @@ import { ReplyQuote } from "./message-bubble/ReplyQuote";
 import { ReactionsBadge } from "./message-bubble/ReactionsBadge";
 import { HoverActions } from "./message-bubble/HoverActions";
 import { AttachmentBubble } from "./message-bubble/AttachmentBubble";
+import { LinkPreview } from "./message-bubble/LinkPreview";
 import { LightGallery, LightGalleryItem } from "./LightGallery";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { extractFirstUrl } from "@/hooks/api/use-link-preview";
 
 interface MessageBubbleProps {
   message: Message;
@@ -21,30 +23,59 @@ interface MessageBubbleProps {
   onToggleSelectMessage?: (messageId: string) => void;
 }
 
+const READ_MORE_THRESHOLD = 300;
+
 const escapeRegExp = (string: string) => {
   return string.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 };
 
-const renderHighlightedContent = (content: string, query: string) => {
-  if (!query.trim() || !content) return <span className="break-words">{content}</span>;
+const URL_INLINE_REGEX = /(https?:\/\/[^\s]+)/g;
 
-  const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
-  const parts = content.split(regex);
+/** Renders content with highlighted search matches AND auto-linked URLs. */
+const renderHighlightedContent = (content: string, query: string) => {
+  // Split by URLs first, then apply highlight within non-URL segments
+  const urlParts = content.split(URL_INLINE_REGEX);
 
   return (
     <span className="break-words">
-      {parts.map((part, index) =>
-        regex.test(part) ? (
-          <mark
-            key={index}
-            className="bg-yellow-250 dark:bg-yellow-500/40 text-slate-900 dark:text-yellow-105 rounded px-0.5 font-semibold"
-          >
-            {part}
-          </mark>
-        ) : (
-          part
-        )
-      )}
+      {urlParts.map((part, i) => {
+        if (URL_INLINE_REGEX.test(part)) {
+          // Reset regex lastIndex (global flag quirk)
+          URL_INLINE_REGEX.lastIndex = 0;
+          return (
+            <a
+              key={i}
+              href={part}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className="underline underline-offset-2 opacity-80 hover:opacity-100 break-all"
+            >
+              {part}
+            </a>
+          );
+        }
+        URL_INLINE_REGEX.lastIndex = 0;
+        if (!query.trim()) return <span key={i}>{part}</span>;
+        const regex = new RegExp(`(${escapeRegExp(query)})`, "gi");
+        const segments = part.split(regex);
+        return (
+          <span key={i}>
+            {segments.map((seg, j) =>
+              regex.test(seg) ? (
+                <mark
+                  key={j}
+                  className="bg-yellow-250 dark:bg-yellow-500/40 text-slate-900 dark:text-yellow-105 rounded px-0.5 font-semibold"
+                >
+                  {seg}
+                </mark>
+              ) : (
+                seg
+              )
+            )}
+          </span>
+        );
+      })}
     </span>
   );
 };
@@ -59,6 +90,16 @@ export function MessageBubble({
   const isMe = message.senderId === "me";
   const reactions = message.reactions ?? [];
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+
+  const isLong = message.content?.length > READ_MORE_THRESHOLD;
+  const displayContent =
+    isLong && !expanded
+      ? message.content.slice(0, READ_MORE_THRESHOLD)
+      : message.content;
+
+  // Extract the first URL from the message for the link preview
+  const linkUrl = message.content ? extractFirstUrl(message.content) : null;
 
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const starMutation = useStarMessage();
@@ -240,7 +281,19 @@ export function MessageBubble({
               {message.replyTo && (
                 <ReplyQuote replyTo={message.replyTo} onScrollToReply={handleScrollToReply} />
               )}
-              {renderHighlightedContent(message.content, highlightQuery)}
+              {renderHighlightedContent(displayContent, highlightQuery)}
+              {isLong && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setExpanded((v) => !v); }}
+                  className="block mt-1 text-[11px] font-bold text-emerald-600 dark:text-[#19E68C] hover:underline focus:outline-none"
+                >
+                  {expanded ? "Read less" : "Read more"}
+                </button>
+              )}
+              {/* Link preview — shown only for plain text messages */}
+              {linkUrl && (
+                <LinkPreview url={linkUrl} isMe={isMe} />
+              )}
               <ReactionsBadge reactions={reactions} isMe={isMe} />
             </div>
             {!isSelectionMode && hoverActions}

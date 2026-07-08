@@ -75,7 +75,7 @@ export class ConversationController {
         );
       }
 
-      const sanitized = sanitizeConversationForUser(conversation, userId);
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
       res.status(201).json({
         status: "success",
         statusCode: 201,
@@ -103,7 +103,7 @@ export class ConversationController {
         userId
       );
 
-      const sanitized = sanitizeConversationForUser(conversation, userId);
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
       res.status(200).json({
         status: "success",
         statusCode: 200,

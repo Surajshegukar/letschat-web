@@ -5,7 +5,31 @@ import { Message } from "@/models/Message";
 import mongoose from "mongoose";
 import { socketService } from "./socket.service";
 
-export function sanitizeConversationForUser(conv: any, userId: string): any {
+import { User } from "@/models/User";
+
+export function sanitizeUserForViewer(user: any, viewerId: string): any {
+  if (!user) return user;
+
+  const userObj = typeof user.toObject === "function" ? user.toObject() : user;
+
+  const blockedList = userObj.blockedUsers || [];
+  const hasBlockedViewer = blockedList.some(
+    (id: any) => (id._id || id || "").toString() === viewerId
+  );
+
+  if (hasBlockedViewer) {
+    userObj.isOnline = false;
+    userObj.lastSeen = undefined;
+    userObj.avatar = undefined;
+    userObj.avatarUrl = undefined;
+    userObj.about = "";
+  }
+
+  delete userObj.blockedUsers;
+  return userObj;
+}
+
+export async function sanitizeConversationForUser(conv: any, userId: string): Promise<any> {
   const convObj = typeof conv.toObject === "function" ? conv.toObject() : conv;
 
   const selfParticipant = convObj.participants?.find(
@@ -18,6 +42,35 @@ export function sanitizeConversationForUser(conv: any, userId: string): any {
     if (lastMsgTime <= clearedTime) {
       delete convObj.lastMessage;
     }
+  }
+
+  const otherParticipant = convObj.participants?.find(
+    (p: any) => (p.userId?._id || p.userId || "").toString() !== userId
+  );
+
+  if (otherParticipant && convObj.type === "direct") {
+    const otherUser = otherParticipant.userId;
+    if (otherUser) {
+      const otherUserIdStr = (otherUser._id || otherUser || "").toString();
+
+      const viewer = await User.findById(userId).select("blockedUsers").exec();
+      const viewerBlockedList = viewer?.blockedUsers?.map((id: any) => id.toString()) || [];
+
+      const target = await User.findById(otherUserIdStr).select("blockedUsers").exec();
+      const targetBlockedList = target?.blockedUsers?.map((id: any) => id.toString()) || [];
+
+      convObj.isBlocked = viewerBlockedList.includes(otherUserIdStr);
+      convObj.hasBlockedMe = targetBlockedList.includes(userId);
+    }
+  }
+
+  if (convObj.participants) {
+    convObj.participants = convObj.participants.map((p: any) => {
+      if (p.userId) {
+        p.userId = sanitizeUserForViewer(p.userId, userId);
+      }
+      return p;
+    });
   }
 
   return convObj;
@@ -59,7 +112,7 @@ export class ConversationService {
         }
 
         const unreadCount = await Message.countDocuments(countQuery);
-        const sanitized = sanitizeConversationForUser(convObj, userId);
+        const sanitized = await sanitizeConversationForUser(convObj, userId);
 
         return {
           ...sanitized,
@@ -117,11 +170,11 @@ export class ConversationService {
       const updatedConversation = await conversationRepository.findById(existing._id.toString());
       if (updatedConversation) {
         // Still notify participants so their sockets join the room if needed
-        updatedConversation.participants.forEach((p) => {
+        for (const p of updatedConversation.participants) {
           const pId = p.userId._id.toString();
-          const sanitizedForUser = sanitizeConversationForUser(updatedConversation, pId);
+          const sanitizedForUser = await sanitizeConversationForUser(updatedConversation, pId);
           socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
-        });
+        }
         return updatedConversation;
       }
 
@@ -158,10 +211,11 @@ export class ConversationService {
     }
 
     // Emit event to all participants' personal rooms
-    populated.participants.forEach((p) => {
+    for (const p of populated.participants) {
       const pId = p.userId._id.toString();
-      socketService.emitToUser(pId, "new_conversation", populated);
-    });
+      const sanitizedForUser = await sanitizeConversationForUser(populated, pId);
+      socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
+    }
 
     return populated;
   }
@@ -228,10 +282,11 @@ export class ConversationService {
     }
 
     // Emit event to all participants' personal rooms
-    populated.participants.forEach((p) => {
+    for (const p of populated.participants) {
       const pId = p.userId._id.toString();
-      socketService.emitToUser(pId, "new_conversation", populated);
-    });
+      const sanitizedForUser = await sanitizeConversationForUser(populated, pId);
+      socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
+    }
 
     return populated;
   }

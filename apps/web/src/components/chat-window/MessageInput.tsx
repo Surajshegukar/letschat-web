@@ -17,6 +17,8 @@ interface MessageInputProps {
   onSendVoiceNote?: (file: File, duration: string) => void;
   onSendAttachment?: (type: "image" | "document") => void;
   onSendFiles?: (files: File[], captions: string[]) => void;
+  isBlocked?: boolean;
+  hasBlockedMe?: boolean;
 }
 
 export function MessageInput({
@@ -25,6 +27,8 @@ export function MessageInput({
   onSendMessage,
   onSendVoiceNote,
   onSendFiles,
+  isBlocked = false,
+  hasBlockedMe = false,
 }: MessageInputProps) {
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const editMutation = useEditMessage();
@@ -86,6 +90,22 @@ export function MessageInput({
         onSend={handleSendPendingFiles}
         onCancel={handleCancelPendingFiles}
       />
+    );
+  }
+
+  if (isBlocked) {
+    return (
+      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/30 flex items-center justify-center text-xs font-semibold text-red-500/80 dark:text-red-400 select-none">
+        You have blocked this user. Unblock to send messages.
+      </div>
+    );
+  }
+
+  if (hasBlockedMe) {
+    return (
+      <div className="p-4 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-950/30 flex items-center justify-center text-xs font-semibold text-zinc-500 select-none">
+        You cannot send messages to this user.
+      </div>
     );
   }
 

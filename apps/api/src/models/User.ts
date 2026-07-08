@@ -24,6 +24,7 @@ export interface IUser extends Document {
   }[];
   isDeleted: boolean;
   deletedAt?: Date;
+  blockedUsers: mongoose.Types.ObjectId[];
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -123,6 +124,12 @@ const userSchema = new Schema<IUser>(
     deletedAt: {
       type: Date,
     },
+    blockedUsers: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
   },
   {
     timestamps: true,
@@ -171,6 +178,7 @@ userSchema.methods.toJSON = function () {
   delete obj.verificationToken;
   delete obj.resetToken;
   delete obj.resetTokenExpiry;
+  delete obj.blockedUsers;
   delete obj.__v;
   return obj;
 };

@@ -40,4 +40,13 @@ router.get("/search", authenticateJWT, userController.searchUsers);
 // Delete current user account
 router.delete("/me", authenticateJWT, userController.deleteAccount);
 
+// Block user
+router.post("/me/block/:userId", authenticateJWT, userController.blockUser);
+
+// Unblock user
+router.post("/me/unblock/:userId", authenticateJWT, userController.unblockUser);
+
+// Get blocked users
+router.get("/me/blocked", authenticateJWT, userController.getBlockedUsers);
+
 export default router;

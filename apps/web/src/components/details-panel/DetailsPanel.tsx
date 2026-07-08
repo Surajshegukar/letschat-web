@@ -13,6 +13,8 @@ import { DetailsSharedAssets } from "./DetailsSharedAssets";
 import { DetailsSettings } from "./DetailsSettings";
 import { GroupMembersList } from "./GroupMembersList";
 import { ArrowLeft, Star, FileText } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { useBlockUser, useUnblockUser } from "@/hooks/api/use-user";
 
 interface DetailsPanelProps {
   activeRoomId?: string | null;
@@ -27,6 +29,29 @@ export function DetailsPanel({ activeRoomId, onClose, onOpenMedia }: DetailsPane
   const onlineUsers = useRealtimeStore((state) => state.onlineUsers);
 
   const [subView, setSubView] = React.useState<"main" | "starred">("main");
+
+  const blockMutation = useBlockUser();
+  const unblockMutation = useUnblockUser();
+  const queryClient = useQueryClient();
+
+  const handleBlockToggle = () => {
+    if (!room?.partnerId) return;
+    if (room.isBlocked) {
+      unblockMutation.mutate(room.partnerId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
+          queryClient.invalidateQueries({ queryKey: ["messages", activeRoomId] });
+        },
+      });
+    } else {
+      blockMutation.mutate(room.partnerId, {
+        onSuccess: () => {
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
+          queryClient.invalidateQueries({ queryKey: ["messages", activeRoomId] });
+        },
+      });
+    }
+  };
 
   // Fetch messages in this room to extract assets
   const { data: messagesData } = useMessages(activeRoomId || null);
@@ -164,7 +189,10 @@ export function DetailsPanel({ activeRoomId, onClose, onOpenMedia }: DetailsPane
           mediaCount={mediaAssetsCount}
         />
 
-        <DetailsSettings />
+        <DetailsSettings
+          isBlocked={room.type === "direct" ? !!room.isBlocked : undefined}
+          onBlockToggle={room.type === "direct" ? handleBlockToggle : undefined}
+        />
       </div>
     </div>
   );

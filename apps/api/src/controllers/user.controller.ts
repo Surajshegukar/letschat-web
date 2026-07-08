@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { userService } from "@/services/user.service";
 import { uploadService } from "@/services/upload.service";
+import mongoose from "mongoose";
 
 export class UserController {
   /**
@@ -138,6 +139,94 @@ export class UserController {
         status: "success",
         statusCode: 200,
         message: "Password changed successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Block a user.
+   */
+  blockUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.user!.id;
+
+      if (!mongoose.Types.ObjectId.isValid(userId!)) {
+        res.status(400).json({
+          status: "error",
+          statusCode: 400,
+          message: "Invalid target user ID format",
+        });
+        return;
+      }
+
+      await userService.blockUser(currentUserId, userId!);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        message: "User blocked successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Unblock a user.
+   */
+  unblockUser = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { userId } = req.params;
+      const currentUserId = req.user!.id;
+
+      if (!mongoose.Types.ObjectId.isValid(userId!)) {
+        res.status(400).json({
+          status: "error",
+          statusCode: 400,
+          message: "Invalid target user ID format",
+        });
+        return;
+      }
+
+      await userService.unblockUser(currentUserId, userId!);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        message: "User unblocked successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Get blocked users list.
+   */
+  getBlockedUsers = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const currentUserId = req.user!.id;
+      const blockedUsers = await userService.getBlockedUsers(currentUserId);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { blockedUsers },
       });
     } catch (error) {
       next(error);

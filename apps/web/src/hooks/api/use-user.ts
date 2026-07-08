@@ -93,3 +93,45 @@ export function useSearchUsers(query: string) {
     queryFn: () => userService.searchUsers(query),
   });
 }
+
+/**
+ * Hook to block a user.
+ */
+export function useBlockUser() {
+  return useMutation({
+    mutationFn: (userId: string) => userService.blockUser(userId),
+    onSuccess: () => {
+      toast.success("User blocked successfully");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to block user";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to unblock a user.
+ */
+export function useUnblockUser() {
+  return useMutation({
+    mutationFn: (userId: string) => userService.unblockUser(userId),
+    onSuccess: () => {
+      toast.success("User unblocked successfully");
+    },
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to unblock user";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to retrieve list of blocked users.
+ */
+export function useBlockedUsers() {
+  return useQuery({
+    queryKey: ["users", "blocked"],
+    queryFn: () => userService.getBlockedUsers(),
+  });
+}

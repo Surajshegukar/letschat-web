@@ -1,16 +1,18 @@
 import React from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, Unlock } from "lucide-react";
 
 interface DetailsSettingsProps {
   notificationsOn?: boolean;
   chatTheme?: string;
-  onBlockUser?: () => void;
+  isBlocked?: boolean;
+  onBlockToggle?: () => void;
 }
 
 export function DetailsSettings({
   notificationsOn = true,
   chatTheme = "System",
-  onBlockUser,
+  isBlocked = false,
+  onBlockToggle,
 }: DetailsSettingsProps) {
   return (
     <div className="space-y-4 pt-4 border-t border-zinc-150 dark:border-zinc-900">
@@ -31,13 +33,28 @@ export function DetailsSettings({
       </div>
 
       {/* Block alert button */}
-      <button
-        onClick={onBlockUser}
-        className="w-full flex items-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 p-2.5 rounded-xl border border-red-200/50 dark:border-red-500/20 transition font-bold text-xs justify-center uppercase tracking-wider mt-4"
-      >
-        <CircleAlert className="h-4 w-4" />
-        <span>Block User</span>
-      </button>
+      {onBlockToggle && (
+        <button
+          onClick={onBlockToggle}
+          className={`w-full flex items-center gap-2 p-2.5 rounded-xl border transition font-bold text-xs justify-center uppercase tracking-wider mt-4 ${
+            isBlocked
+              ? "text-emerald-600 border-emerald-250/50 dark:border-emerald-500/20 hover:bg-emerald-50 dark:hover:bg-emerald-500/10"
+              : "text-red-500 border-red-200/50 dark:border-red-500/20 hover:bg-red-50 dark:hover:bg-red-500/10"
+          }`}
+        >
+          {isBlocked ? (
+            <>
+              <Unlock className="h-4 w-4" />
+              <span>Unblock User</span>
+            </>
+          ) : (
+            <>
+              <CircleAlert className="h-4 w-4" />
+              <span>Block User</span>
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 }

@@ -62,4 +62,28 @@ export const userService = {
     const response = await api.delete("/users/me");
     return response.data;
   },
+
+  /**
+   * Block a user.
+   */
+  async blockUser(userId: string) {
+    const response = await api.post(`/users/me/block/${userId}`);
+    return response.data;
+  },
+
+  /**
+   * Unblock a user.
+   */
+  async unblockUser(userId: string) {
+    const response = await api.post(`/users/me/unblock/${userId}`);
+    return response.data;
+  },
+
+  /**
+   * Get blocked users list.
+   */
+  async getBlockedUsers() {
+    const response = await api.get("/users/me/blocked");
+    return response.data;
+  },
 };
