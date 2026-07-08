@@ -33,6 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // 1. Initial authentication check (Refresh Token exchange) on mount
   useEffect(() => {
     async function checkAuth() {
+      // If the store already has a valid token (e.g. user just logged in and
+      // Next.js navigated to /chat while the in-memory store is intact), skip
+      // the refresh round-trip entirely. The 13-minute interval below will
+      // keep the token fresh going forward.
+      const { token: existingToken, user: existingUser } = useAuthStore.getState();
+      if (existingToken && existingUser) {
+        setIsChecking(false);
+        return;
+      }
+
       try {
         // Attempt to refresh the access token via HttpOnly cookie
         const refreshResponse = await authService.refreshToken();
