@@ -1,5 +1,5 @@
 import React from "react";
-import { Paperclip, Smile, Send, Mic, Pencil, X } from "lucide-react";
+import { Plus, Smile, Send, Mic, Pencil, X } from "lucide-react";
 import { useMessageInput } from "@/hooks/use-message-input";
 import { useEditMessage } from "@/hooks/api/use-conversations";
 import { useChatStore } from "@/store/chat-store";
@@ -14,7 +14,7 @@ interface MessageInputProps {
   inputText: string;
   onChangeInput: (text: string) => void;
   onSendMessage: (e?: React.FormEvent) => void;
-  onSendVoiceNote?: (duration: string) => void;
+  onSendVoiceNote?: (file: File, duration: string) => void;
   onSendAttachment?: (type: "image" | "document") => void;
   onSendFiles?: (files: File[], captions: string[]) => void;
 }
@@ -90,7 +90,7 @@ export function MessageInput({
   }
 
   return (
-    <div className="p-2 border-t border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 relative">
+    <div className="p-3 bg-transparent flex-shrink-0 relative">
       {fileError && <FileErrorBanner error={fileError} onDismiss={() => setFileError(null)} />}
 
       {/* Edit mode banner */}
@@ -105,7 +105,7 @@ export function MessageInput({
           <button
             type="button"
             onClick={() => { setEditingMessage(null); onChangeInput(""); }}
-            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg text-zinc-400 hover:text-zinc-600 transition flex-shrink-0 ml-4"
+            className="p-1 hover:bg-zinc-200 dark:hover:bg-zinc-800 rounded-lg text-zinc-450 hover:text-zinc-600 transition flex-shrink-0 ml-4"
           >
             <X className="h-4 w-4" />
           </button>
@@ -141,13 +141,23 @@ export function MessageInput({
           onSend={handleSendVoiceNote}
         />
       ) : (
-        <form onSubmit={handleSubmit} className="flex items-center gap-3">
+        <form onSubmit={handleSubmit} className="flex items-center bg-[#FAFAFC] dark:bg-zinc-900 border border-zinc-250/50 dark:border-zinc-800/80 rounded-full px-3 py-1 w-full transition-all">
           <button
             type="button"
             onClick={() => { setIsMenuOpen((p) => !p); setIsEmojiOpen(false); }}
-            className={`p-2.5 rounded-xl transition text-zinc-400 ${isMenuOpen ? "bg-zinc-100 dark:bg-zinc-900 text-slate-800 dark:text-[#19E68C]" : "hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
+            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] ${isMenuOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
+            title="Attach File"
           >
-            <Paperclip className="h-5 w-5" />
+            <Plus className="h-5 w-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={() => { setIsEmojiOpen((p) => !p); setIsMenuOpen(false); }}
+            className={`p-2 rounded-full transition text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 hover:text-slate-800 dark:hover:text-[#19E68C] ${isEmojiOpen ? "bg-zinc-100 dark:bg-zinc-800 text-[#19E68C]" : ""}`}
+            title="Emoji Picker"
+          >
+            <Smile className="h-5 w-5" />
           </button>
 
           <input
@@ -156,35 +166,23 @@ export function MessageInput({
             value={inputText}
             onChange={(e) => onChangeInput(e.target.value)}
             placeholder={editingMessage ? "Edit your message..." : "Type a message..."}
-            className={`flex-1 h-12 bg-[#FAFAFC] border dark:bg-zinc-900 dark:text-zinc-150 outline-none rounded-xl px-4 text-xs sm:text-sm focus:border-[#19E68C] transition ${
-              editingMessage ? "border-[#19E68C]/50 dark:border-[#19E68C]/30" : "border-zinc-300/50 dark:border-zinc-800"
-            }`}
+            className="flex-1 bg-transparent border-none outline-none focus:outline-none focus:ring-0 text-slate-800 dark:text-zinc-300 placeholder-zinc-400 dark:placeholder-zinc-500 text-xs sm:text-sm px-2 py-1.5"
           />
-
-          <button
-            type="button"
-            onClick={() => { setIsEmojiOpen((p) => !p); setIsMenuOpen(false); }}
-            className={`p-2.5 rounded-xl transition text-zinc-400 ${isEmojiOpen ? "bg-zinc-100 dark:bg-zinc-900 text-slate-800 dark:text-[#19E68C]" : "hover:bg-zinc-100 dark:hover:bg-zinc-900"}`}
-          >
-            <Smile className="h-5 w-5" />
-          </button>
 
           {inputText.trim() ? (
             <button
               type="submit"
-              className={`h-11 w-11 flex items-center justify-center rounded-xl shadow-md active:scale-[0.98] transition font-bold ${
-                editingMessage
-                  ? "bg-[#19E68C] text-[#09090B] shadow-[#19E68C]/20"
-                  : "bg-gradient-to-r from-[#10B981] to-[#19E68C] text-zinc-955 shadow-[#19E68C]/15"
-              }`}
+              className={`p-2 rounded-full transition active:scale-95 flex items-center justify-center text-emerald-500 dark:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50`}
+              title={editingMessage ? "Save Edit" : "Send Message"}
             >
-              {editingMessage ? <Pencil className="h-4.5 w-4.5" /> : <Send className="h-5 w-5" />}
+              {editingMessage ? <Pencil className="h-5 w-5" /> : <Send className="h-5 w-5" />}
             </button>
           ) : (
             <button
               type="button"
               onClick={handleStartRecording}
-              className="h-11 w-11 flex items-center justify-center rounded-xl bg-zinc-100 dark:bg-zinc-900 hover:bg-zinc-200 dark:hover:bg-zinc-800 text-zinc-450 hover:text-emerald-500 dark:hover:text-[#19E68C] active:scale-[0.98] transition"
+              className="p-2 rounded-full transition active:scale-95 flex items-center justify-center text-zinc-400 dark:text-zinc-500 hover:text-emerald-500 dark:hover:text-[#19E68C] hover:bg-zinc-100/50 dark:hover:bg-zinc-800/50"
+              title="Record Voice Note"
             >
               <Mic className="h-5 w-5" />
             </button>

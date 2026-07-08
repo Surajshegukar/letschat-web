@@ -12,11 +12,22 @@ const ALLOWED_DOC_TYPES = [
   "application/zip",
   "application/x-zip-compressed",
 ];
+const ALLOWED_AUDIO_TYPES = [
+  "audio/webm",
+  "audio/ogg",
+  "audio/mp3",
+  "audio/mpeg",
+  "audio/wav",
+  "audio/x-m4a",
+  "audio/aac",
+  "audio/mp4",
+];
 
 // Per-category size limits
 const MAX_IMAGE_SIZE = 10 * 1024 * 1024;  // 10 MB
 const MAX_VIDEO_SIZE = 50 * 1024 * 1024;  // 50 MB
 const MAX_DOC_SIZE   = 20 * 1024 * 1024;  // 20 MB
+const MAX_AUDIO_SIZE = 15 * 1024 * 1024;  // 15 MB
 
 const fileFilter = (
   _req: any,
@@ -26,11 +37,12 @@ const fileFilter = (
   const isImage = ALLOWED_IMAGE_TYPES.includes(file.mimetype);
   const isVideo = ALLOWED_VIDEO_TYPES.includes(file.mimetype);
   const isDoc   = ALLOWED_DOC_TYPES.includes(file.mimetype);
+  const isAudio = ALLOWED_AUDIO_TYPES.includes(file.mimetype);
 
-  if (!isImage && !isVideo && !isDoc) {
+  if (!isImage && !isVideo && !isDoc && !isAudio) {
     return callback(
       new Error(
-        `File type "${file.mimetype}" is not allowed. Accepted: images (JPEG, PNG, WebP, GIF), videos (MP4, WebM, MOV), documents (PDF, DOC, DOCX, TXT, ZIP).`
+        `File type "${file.mimetype}" is not allowed. Accepted: images (JPEG, PNG, WebP, GIF), videos (MP4, WebM, MOV), documents (PDF, DOC, DOCX, TXT, ZIP), audio (WEBM, OGG, MP3, WAV, M4A, AAC).`
       ) as any,
       false
     );
@@ -46,6 +58,9 @@ const fileFilter = (
   }
   if (isDoc && file.size > MAX_DOC_SIZE) {
     return callback(new Error(`Document "${file.originalname}" exceeds the 20 MB size limit.`) as any, false);
+  }
+  if (isAudio && file.size > MAX_AUDIO_SIZE) {
+    return callback(new Error(`Audio "${file.originalname}" exceeds the 15 MB size limit.`) as any, false);
   }
 
   callback(null, true);

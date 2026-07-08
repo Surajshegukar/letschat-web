@@ -17,7 +17,7 @@ export class AuthService {
    * Register a new user, generate verification token, and send verification email.
    */
   async register(input: RegisterInput): Promise<{ message: string }> {
-    const { username, email, password } = input;
+    const { displayName, email, password } = input;
 
     // 1. Check if email already exists
     const emailExists = await userRepository.existsByEmail(email);
@@ -27,12 +27,16 @@ export class AuthService {
       throw err;
     }
 
-    // 2. Check if username already exists
-    const usernameExists = await userRepository.existsByUsername(username);
-    if (usernameExists) {
-      const err: any = new Error("Username is already taken");
-      err.statusCode = 409;
-      throw err;
+    // 2. Autogenerate a unique username from displayName
+    let baseUsername = displayName.toLowerCase().replace(/[^a-zA-Z0-9_]/g, "");
+    if (baseUsername.length < 3) baseUsername = `user_${baseUsername}`;
+    if (baseUsername.length > 15) baseUsername = baseUsername.substring(0, 15);
+
+    let username = baseUsername;
+    let isTaken = await userRepository.existsByUsername(username);
+    while (isTaken) {
+      username = `${baseUsername}_${Math.floor(100 + Math.random() * 900)}`;
+      isTaken = await userRepository.existsByUsername(username);
     }
 
     // 3. Generate verification token
@@ -42,6 +46,7 @@ export class AuthService {
     // 4. Create user
     const user = await userRepository.create({
       username,
+      displayName,
       email,
       password,
       verificationToken: hashedToken,
@@ -161,6 +166,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         avatar: user.avatar,
+        avatarUrl: user.avatar,
         about: user.about,
       },
     };
@@ -527,6 +533,7 @@ export class AuthService {
         email: user.email,
         displayName: user.displayName,
         avatar: user.avatar,
+        avatarUrl: user.avatar,
         about: user.about,
       },
     };

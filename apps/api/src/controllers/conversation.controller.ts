@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { conversationService } from "@/services/conversation.service";
+import { conversationService, sanitizeConversationForUser } from "@/services/conversation.service";
 
 export class ConversationController {
   /**
@@ -75,10 +75,11 @@ export class ConversationController {
         );
       }
 
+      const sanitized = sanitizeConversationForUser(conversation, userId);
       res.status(201).json({
         status: "success",
         statusCode: 201,
-        data: { conversation },
+        data: { conversation: sanitized },
       });
     } catch (error) {
       next(error);
@@ -102,10 +103,11 @@ export class ConversationController {
         userId
       );
 
+      const sanitized = sanitizeConversationForUser(conversation, userId);
       res.status(200).json({
         status: "success",
         statusCode: 200,
-        data: { conversation },
+        data: { conversation: sanitized },
       });
     } catch (error) {
       next(error);
@@ -154,6 +156,54 @@ export class ConversationController {
         status: "success",
         statusCode: 200,
         data: { conversation },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Delete a conversation for a user.
+   */
+  deleteConversation = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+
+      const result = await conversationService.deleteConversation(id!, userId);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        message: result.message,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Clear conversation history for a user.
+   */
+  clearConversation = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+
+      const result = await conversationService.clearConversation(id!, userId);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        message: result.message,
       });
     } catch (error) {
       next(error);

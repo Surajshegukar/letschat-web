@@ -65,6 +65,9 @@ export function SettingsAccountView({
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Security Notifications
             </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
+            </span>
           </div>
           <input
             type="checkbox"
@@ -85,6 +88,9 @@ export function SettingsAccountView({
             <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Two-step Verification
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
             </span>
           </div>
           <input
@@ -108,6 +114,9 @@ export function SettingsAccountView({
           <div className="flex items-center gap-3 text-slate-850 dark:text-zinc-200 hover:text-inherit">
             <Smartphone className="h-4.5 w-4.5" />
             <span className="text-xs font-bold">Change Phone Number</span>
+            <span className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Coming Soon
+            </span>
           </div>
         </button>
         <button
@@ -117,6 +126,9 @@ export function SettingsAccountView({
           <div className="flex items-center gap-3 text-slate-855 dark:text-zinc-200 hover:text-inherit">
             <Archive className="h-4.5 w-4.5" />
             <span className="text-xs font-bold">Request Account Report Info</span>
+            <span className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Coming Soon
+            </span>
           </div>
         </button>
       </div>
@@ -131,6 +143,9 @@ export function SettingsAccountView({
             <KeyRound className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Change Password
+            </span>
+            <span className="bg-emerald-500/10 text-emerald-650 dark:text-[#19E68C] px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Functional
             </span>
           </div>
           <span className="text-zinc-400 dark:text-zinc-600 text-xs font-bold">
@@ -234,7 +249,12 @@ export function SettingsAccountView({
       >
         <Trash2 className="h-5 w-5" />
         <div className="min-w-0">
-          <h4 className="text-xs font-bold uppercase tracking-wide">Delete My Account</h4>
+          <div className="flex items-center gap-2">
+            <h4 className="text-xs font-bold uppercase tracking-wide">Delete My Account</h4>
+            <span className="bg-emerald-500/10 text-emerald-650 dark:text-[#19E68C] px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Functional
+            </span>
+          </div>
           <p className="text-[9px] text-rose-500/80 mt-1 font-semibold">
             Instantly wipe profile logs, communities access, and chat history.
           </p>

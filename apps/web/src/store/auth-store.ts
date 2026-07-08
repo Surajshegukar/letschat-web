@@ -30,7 +30,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   setAuth: (user, token) => {
     const normalizedUser = {
       ...user,
-      id: user.id || (user as any)._id,
+      id: user.id || (user as { _id?: string })._id || "",
+      avatarUrl: user.avatarUrl || (user as { avatar?: string }).avatar,
     };
     set({ user: normalizedUser, token, isAuthenticated: true, isLoading: false });
   },
@@ -45,7 +46,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => {
       if (!state.user) return { user: null };
       const updatedUser = { ...state.user, ...fields };
-      updatedUser.id = updatedUser.id || (updatedUser as any)._id;
+      updatedUser.id = updatedUser.id || (updatedUser as { _id?: string })._id || "";
+      updatedUser.avatarUrl = updatedUser.avatarUrl || (updatedUser as { avatar?: string }).avatar;
       return { user: updatedUser };
     }),
 }));

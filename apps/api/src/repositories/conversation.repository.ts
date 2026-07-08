@@ -1,5 +1,6 @@
 import { Conversation, IConversation, ILastMessage } from "@/models/Conversation";
 import mongoose, { FilterQuery, UpdateQuery } from "mongoose";
+import { sanitizeDeletedUser } from "@/repositories/user.repository";
 
 export const conversationRepository = {
   /**
@@ -15,7 +16,7 @@ export const conversationRepository = {
    */
   async findById(id: string): Promise<IConversation | null> {
     return Conversation.findById(id)
-      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen")
+      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .exec();
   },
 
@@ -30,16 +31,32 @@ export const conversationRepository = {
   ): Promise<IConversation[]> {
     const skip = (page - 1) * limit;
 
-    return Conversation.find({
-      "participants.userId": userId,
+    const conversations = await Conversation.find({
       isActive: true,
+      participants: {
+        $elemMatch: {
+          userId: userId,
+          isDeleted: { $ne: true },
+        },
+      },
     })
-      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen")
+      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .sort({ "lastMessage.timestamp": -1, updatedAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean()
-      .exec() as unknown as Promise<IConversation[]>;
+      .exec();
+
+    // Sanitize soft-deleted participants
+    conversations.forEach((conv: any) => {
+      conv.participants?.forEach((p: any) => {
+        if (p.userId) {
+          sanitizeDeletedUser(p.userId);
+        }
+      });
+    });
+
+    return conversations as unknown as IConversation[];
   },
 
   /**
@@ -49,14 +66,24 @@ export const conversationRepository = {
     userAId: string,
     userBId: string
   ): Promise<IConversation | null> {
-    return Conversation.findOne({
+    const conversation = await Conversation.findOne({
       type: "direct",
       isActive: true,
       "participants.userId": { $all: [userAId, userBId] },
     })
-      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen")
+      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .lean()
-      .exec() as unknown as Promise<IConversation | null>;
+      .exec();
+
+    if (conversation) {
+      conversation.participants?.forEach((p: any) => {
+        if (p.userId) {
+          sanitizeDeletedUser(p.userId);
+        }
+      });
+    }
+
+    return conversation as unknown as IConversation | null;
   },
 
   /**
@@ -68,7 +95,10 @@ export const conversationRepository = {
   ): Promise<IConversation | null> {
     return Conversation.findByIdAndUpdate(
       conversationId,
-      { lastMessage },
+      {
+        lastMessage,
+        $set: { "participants.$[].isDeleted": false },
+      },
       { new: true }
     ).exec();
   },
@@ -115,5 +145,53 @@ export const conversationRepository = {
 
     participant.isArchived = !participant.isArchived;
     return conversation.save();
+  },
+
+  /**
+   * Soft delete a conversation by setting isActive: false.
+   */
+  async deleteById(id: string): Promise<IConversation | null> {
+    return Conversation.findByIdAndUpdate(id, { isActive: false }, { new: true }).exec();
+  },
+
+  /**
+   * Hide the conversation and clear history for a specific user.
+   */
+  async deleteForUser(
+    conversationId: string,
+    userId: string
+  ): Promise<IConversation | null> {
+    return Conversation.findOneAndUpdate(
+      { _id: conversationId, "participants.userId": userId },
+      {
+        $set: {
+          "participants.$.isDeleted": true,
+          "participants.$.clearedAt": new Date(),
+        },
+      },
+      { new: true }
+    )
+      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
+      .exec();
+  },
+
+  /**
+   * Clear conversation message history for a specific user.
+   */
+  async clearForUser(
+    conversationId: string,
+    userId: string
+  ): Promise<IConversation | null> {
+    return Conversation.findOneAndUpdate(
+      { _id: conversationId, "participants.userId": userId },
+      {
+        $set: {
+          "participants.$.clearedAt": new Date(),
+        },
+      },
+      { new: true }
+    )
+      .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
+      .exec();
   },
 };

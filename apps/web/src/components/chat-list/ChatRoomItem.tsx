@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Pin, PinOff, Archive, Check } from "lucide-react";
+import { Avatar } from "../ui";
 import { ChatRoom } from "@/types/chat";
 import { useRealtimeStore } from "@/store/realtime-store";
 import { useSocket } from "@/providers/socket-provider";
@@ -65,13 +66,8 @@ export function ChatRoomItem({ room, isActive, onSelect }: ChatRoomItemProps) {
             <div className="h-10 w-10 rounded-full bg-[#19E68C]/15 text-emerald-600 flex items-center justify-center font-bold text-sm dark:bg-[#19E68C]/10 dark:text-[#19E68C]">
               {initials}
             </div>
-          ) : room.avatar ? (
-            <img src={room.avatar} className="h-10 w-10 rounded-full object-cover" alt={room.name} />
           ) : (
-            // Fallback avatar — gradient with initials so broken-img never shows
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-violet-400 to-indigo-500 flex items-center justify-center font-bold text-sm text-white">
-              {initials}
-            </div>
+            <Avatar src={room.avatar} name={room.name} size="md" />
           )}
 
           {/* Always render status dot for direct chats: green = online, grey = offline */}

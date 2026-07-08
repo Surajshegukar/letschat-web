@@ -1,8 +1,18 @@
 import React from "react";
-import { Download, FileText, FileSpreadsheet, FileArchive } from "lucide-react";
-import { mockDocs } from "@/constants/mock-data";
+import { Download, FileText, FileSpreadsheet, FileArchive, Music } from "lucide-react";
 
-export function DocsTab() {
+interface DocsTabProps {
+  items?: {
+    id: string;
+    name: string;
+    url: string;
+    type: string;
+    size: string;
+    date: string;
+  }[];
+}
+
+export function DocsTab({ items = [] }: DocsTabProps) {
   const getDocIcon = (type: string) => {
     switch (type) {
       case "pdf":
@@ -11,14 +21,25 @@ export function DocsTab() {
         return <FileSpreadsheet className="h-8 w-8 text-emerald-500" />;
       case "zip":
         return <FileArchive className="h-8 w-8 text-amber-500" />;
+      case "audio":
+        return <Music className="h-8 w-8 text-blue-500" />;
       default:
         return <FileText className="h-8 w-8 text-[#19E68C]" />;
     }
   };
 
+  if (items.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-zinc-450 dark:text-zinc-500 py-16 text-center">
+        <p className="text-sm font-bold">No shared documents</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-550 mt-1.5">Documents and audio files shared in this chat will appear here.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {mockDocs.map((doc) => (
+      {items.map((doc) => (
         <div
           key={doc.id}
           className="flex items-center justify-between p-4 rounded-2xl bg-white dark:bg-zinc-850 border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:border-[#19E68C]/30 hover:shadow-md transition"

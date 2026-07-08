@@ -9,7 +9,6 @@ import { socketService } from "@/services/socket.service";
 import { redisClient } from "@/config/redis";
 import { messageService } from "@/services/message.service";
 import { logger } from "@/utils/logger";
-import mongoose from "mongoose";
 
 export function setupSocketHandlers(io: Server) {
   // Authentication middleware
@@ -58,8 +57,13 @@ export function setupSocketHandlers(io: Server) {
 
     // 4. Find all user's active conversations and join room channels
     const userConversations = await Conversation.find({
-      "participants.userId": userId,
       isActive: true,
+      participants: {
+        $elemMatch: {
+          userId: userId,
+          isDeleted: { $ne: true },
+        },
+      },
     });
 
     for (const conv of userConversations) {
@@ -98,15 +102,22 @@ export function setupSocketHandlers(io: Server) {
     // Update delivery receipts for all active conversations on connection
     for (const conv of userConversations) {
       const convId = conv._id.toString();
-      const latestMsg = await Message.findOne({ conversationId: conv._id })
+      const selfParticipant = conv.participants.find(
+        (p) => p.userId.toString() === userId
+      );
+      const clearedAt = selfParticipant?.clearedAt;
+
+      const messageQuery: any = { conversationId: conv._id, isCleared: { $ne: true } };
+      if (clearedAt) {
+        messageQuery.createdAt = { $gt: clearedAt };
+      }
+
+      const latestMsg = await Message.findOne(messageQuery)
         .sort({ _id: -1 })
         .select("_id senderId");
 
       if (latestMsg) {
         const latestMsgId = latestMsg._id;
-        const selfParticipant = conv.participants.find(
-          (p) => p.userId.toString() === userId
-        );
 
         const currentDeliveredId = selfParticipant?.lastDeliveredMessageId;
         const isSender = latestMsg.senderId.toString() === userId;
@@ -139,22 +150,28 @@ export function setupSocketHandlers(io: Server) {
         const count = io.sockets.adapter.rooms.get(roomName)?.size || 0;
         io.to(roomName).emit("room_listeners_count", { conversationId, count });
 
-        const latestMsg = await Message.findOne({ conversationId })
-          .sort({ _id: -1 })
-          .select("_id senderId");
+        const conv = await Conversation.findOne({
+          _id: conversationId,
+          "participants.userId": userId,
+        });
 
-        if (latestMsg) {
-          const latestMsgId = latestMsg._id;
-          const conv = await Conversation.findOne({
-            _id: conversationId,
-            "participants.userId": userId,
-          });
+        if (conv) {
+          const selfParticipant = conv.participants.find(
+            (p) => p.userId.toString() === userId
+          );
+          const clearedAt = selfParticipant?.clearedAt;
 
-          if (conv) {
-            const selfParticipant = conv.participants.find(
-              (p) => p.userId.toString() === userId
-            );
+          const messageQuery: any = { conversationId, isCleared: { $ne: true } };
+          if (clearedAt) {
+            messageQuery.createdAt = { $gt: clearedAt };
+          }
 
+          const latestMsg = await Message.findOne(messageQuery)
+            .sort({ _id: -1 })
+            .select("_id senderId");
+
+          if (latestMsg) {
+            const latestMsgId = latestMsg._id;
             const currentReadId = selfParticipant?.lastReadMessageId;
 
             if (!currentReadId || latestMsgId.toString() > currentReadId.toString()) {

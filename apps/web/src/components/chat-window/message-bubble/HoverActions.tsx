@@ -1,5 +1,4 @@
-import React from "react";
-import { Smile, CornerUpLeft, Pencil, Trash2 } from "lucide-react";
+import { Smile, CornerUpLeft, Pencil, Trash2, Star } from "lucide-react";
 import { QUICK_REACTIONS } from "@/constants/emoji-data";
 
 interface HoverActionsProps {
@@ -11,6 +10,8 @@ interface HoverActionsProps {
   onReply: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onStar?: () => void;
+  isStarred?: boolean;
 }
 
 export function HoverActions({
@@ -22,6 +23,8 @@ export function HoverActions({
   onReply,
   onEdit,
   onDelete,
+  onStar,
+  isStarred = false,
 }: HoverActionsProps) {
   return (
     <div className={`hidden group-hover:flex items-center gap-1 flex-shrink-0 ${isMe ? "order-first mr-2" : "order-last ml-2"}`}>
@@ -81,6 +84,20 @@ export function HoverActions({
           title="Delete message"
         >
           <Trash2 className="h-4 w-4" />
+        </button>
+      )}
+
+      {/* Star action button */}
+      {onStar && (
+        <button
+          type="button"
+          onClick={onStar}
+          className={`p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800/80 rounded-full transition-colors hover:scale-105 ${
+            isStarred ? "text-amber-500" : "text-zinc-400 hover:text-amber-550"
+          }`}
+          title={isStarred ? "Unstar message" : "Star message"}
+        >
+          <Star className={`h-4 w-4 ${isStarred ? "fill-amber-500" : ""}`} />
         </button>
       )}
     </div>

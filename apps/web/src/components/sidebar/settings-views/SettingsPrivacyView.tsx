@@ -36,9 +36,14 @@ export function SettingsPrivacyView({
 
         {/* Last Seen */}
         <div className="space-y-1.5">
-          <span className="text-xs font-bold text-slate-855 dark:text-zinc-350">
-            Last Seen & Online
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-855 dark:text-zinc-355">
+              Last Seen & Online
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-450 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Local Only
+            </span>
+          </div>
           <select
             value={lastSeen}
             onChange={(e) => setLastSeen(e.target.value)}
@@ -52,9 +57,14 @@ export function SettingsPrivacyView({
 
         {/* Profile photo */}
         <div className="space-y-1.5">
-          <span className="text-xs font-bold text-slate-855 dark:text-zinc-355">
-            Profile Photo Visibility
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-855 dark:text-zinc-355">
+              Profile Photo Visibility
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Local Only
+            </span>
+          </div>
           <select
             value={profilePhotoPriv}
             onChange={(e) => setProfilePhotoPriv(e.target.value)}
@@ -68,9 +78,14 @@ export function SettingsPrivacyView({
 
         {/* About Bio visibility */}
         <div className="space-y-1.5">
-          <span className="text-xs font-bold text-slate-855 dark:text-zinc-355">
-            About Status Visibility
-          </span>
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-855 dark:text-zinc-355">
+              About Status Visibility
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+              Local Only
+            </span>
+          </div>
           <select
             value={aboutPriv}
             onChange={(e) => setAboutPriv(e.target.value)}
@@ -90,6 +105,9 @@ export function SettingsPrivacyView({
             <Eye className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Read Receipts
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
             </span>
           </div>
           <input
@@ -111,6 +129,9 @@ export function SettingsPrivacyView({
             <EyeOff className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Disappearing Timer
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
             </span>
           </div>
           <select
@@ -134,9 +155,14 @@ export function SettingsPrivacyView({
         <div className="flex items-center gap-3">
           <UserCheck className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
           <div>
-            <p className="text-xs font-bold text-slate-855 dark:text-zinc-200">
-              Blocked Contacts
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-slate-855 dark:text-zinc-200">
+                Blocked Contacts
+              </p>
+              <span className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+                Coming Soon
+              </span>
+            </div>
             <p className="text-[9px] text-zinc-455 dark:text-zinc-500 font-semibold mt-0.5">
               Manage blocklist registry.
             </p>

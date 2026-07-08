@@ -48,6 +48,7 @@ export interface RawMessage {
     url: string;
     mimeType: string;
   }[];
+  isStarred?: boolean;
 }
 
 /**
@@ -193,10 +194,18 @@ export const formatMessage = (msg: RawMessage, currentUserId: string): Message =
     createdAt: msg.createdAt,
     isEdited: (msg as any).isEdited || false,
     isDeleted: (msg as any).isDeleted || false,
+    isStarred: msg.isStarred || false,
     attachment: firstAttachment
       ? {
           name: firstAttachment.filename,
-          size: `${Math.round(firstAttachment.size / 1024)} KB`,
+          size: firstAttachment.mimeType?.startsWith("audio/")
+            ? (() => {
+                const secs = firstAttachment.size || 0;
+                const mins = Math.floor(secs / 60);
+                const rem = Math.floor(secs % 60);
+                return `${mins}:${rem < 10 ? "0" : ""}${rem}`;
+              })()
+            : `${Math.round(firstAttachment.size / 1024)} KB`,
           url: firstAttachment.url,
           type: firstAttachment.mimeType?.startsWith("image/")
             ? "image"

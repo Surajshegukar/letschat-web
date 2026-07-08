@@ -11,6 +11,8 @@ export interface IParticipant {
   lastReadAt?: Date;
   lastDeliveredMessageId?: mongoose.Types.ObjectId;
   lastDeliveredAt?: Date;
+  isDeleted?: boolean;
+  clearedAt?: Date;
 }
 
 export interface ILastMessage {
@@ -72,6 +74,13 @@ const participantSchema = new Schema<IParticipant>({
     ref: "Message",
   },
   lastDeliveredAt: {
+    type: Date,
+  },
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
+  clearedAt: {
     type: Date,
   },
 });

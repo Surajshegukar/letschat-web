@@ -119,7 +119,7 @@ export function useSendMessage() {
         if (!old) return old;
 
         const optimisticMessage = {
-          _id: `temp-${Date.now()}`,
+          _id: `temp-${Date.now()}-${Math.floor(Math.random() * 1000000)}`,
           conversationId: variables.conversationId,
           senderId: currentUserId || "",
           type: variables.data.type || "text",
@@ -391,6 +391,96 @@ export function useUploadAttachments() {
       const apiError = error as { response?: { data?: { message?: string } } };
       const message = apiError.response?.data?.message || "Failed to upload files";
       toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to delete a conversation.
+ */
+export function useDeleteConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationService.deleteConversation(conversationId),
+    onSuccess: (data, conversationId) => {
+      queryClient.setQueryData(["messages", conversationId], { pages: [], pageParams: [] });
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Conversation deleted");
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to delete conversation";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to clear a conversation's messages.
+ */
+export function useClearConversation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (conversationId: string) =>
+      conversationService.clearConversation(conversationId),
+    onSuccess: (data, conversationId) => {
+      queryClient.setQueryData(["messages", conversationId], { pages: [], pageParams: [] });
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Chat cleared");
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to clear chat";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to toggle starring a message.
+ */
+export function useStarMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { conversationId: string; messageId: string }) =>
+      conversationService.starMessage(args.conversationId, args.messageId),
+    onMutate: async (variables) => {
+      const msgKey = ["messages", variables.conversationId];
+      await queryClient.cancelQueries({ queryKey: msgKey });
+      const previousMessages = queryClient.getQueryData<any>(msgKey);
+
+      queryClient.setQueryData<any>(msgKey, (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          pages: old.pages.map((page: any) => ({
+            ...page,
+            data: {
+              ...page.data,
+              messages: page.data.messages.map((msg: any) =>
+                msg._id === variables.messageId
+                  ? { ...msg, isStarred: !msg.isStarred }
+                  : msg
+              ),
+            },
+          })),
+        };
+      });
+
+      return { previousMessages, msgKey };
+    },
+    onError: (_err, _vars, context: any) => {
+      if (context?.previousMessages) queryClient.setQueryData(context.msgKey, context.previousMessages);
+      toast.error("Failed to star message");
+    },
+    onSettled: (_data, _err, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.conversationId] });
     },
   });
 }

@@ -27,6 +27,7 @@ export interface Message {
   isEdited?: boolean;
   isDeleted?: boolean;
   deletedAt?: string;
+  isStarred?: boolean;
 }
 
 export interface ChatRoom {

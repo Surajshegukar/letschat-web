@@ -28,6 +28,9 @@ export function SettingsNotificationsView({
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Notification Tone
             </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
+            </span>
           </div>
           <input
             type="checkbox"
@@ -49,6 +52,9 @@ export function SettingsNotificationsView({
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Group Tone Warning
             </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
+            </span>
           </div>
           <input
             type="checkbox"
@@ -69,6 +75,9 @@ export function SettingsNotificationsView({
             <AlertTriangle className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Show Previews
+            </span>
+            <span className="bg-amber-500/10 text-amber-600 dark:text-amber-455 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Local Only
             </span>
           </div>
           <input

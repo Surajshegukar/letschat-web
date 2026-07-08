@@ -119,8 +119,41 @@ export function useChatWindow(
     setReplyingToMessage(null);
   };
 
-  const sendVoiceNote = (duration: string) => {
-    console.log("Voice note sending scaffolded:", duration);
+  const sendVoiceNote = (file: File, duration: string) => {
+    if (!activeRoomId) return;
+
+    const formData = new FormData();
+    formData.append("files", file);
+
+    uploadAttachmentsMutation.mutate(
+      { conversationId: activeRoomId, formData },
+      {
+        onSuccess: (response) => {
+          const filesData = response.data.files || [];
+          const uploadedFile = filesData[0];
+          if (uploadedFile) {
+            const parts = duration.split(":");
+            const secs = parseInt(parts[0] || "0", 10) * 60 + parseInt(parts[1] || "0", 10);
+
+            sendMessageMutation.mutate({
+              conversationId: activeRoomId,
+              data: {
+                content: "",
+                type: "audio",
+                attachments: [{
+                  url: uploadedFile.url,
+                  filename: uploadedFile.filename,
+                  mimeType: uploadedFile.mimeType,
+                  size: secs,
+                }],
+                replyTo: replyingToMessage ? replyingToMessage.id : undefined,
+              },
+            });
+          }
+          setReplyingToMessage(null);
+        },
+      }
+    );
   };
 
   const sendAttachment = (type: "image" | "document") => {

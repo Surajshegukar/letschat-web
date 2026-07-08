@@ -84,6 +84,15 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
     filteredRooms,
   } = useChatList(formattedRooms);
 
+  const [localSearch, setLocalSearch] = React.useState("");
+
+  React.useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(localSearch);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [localSearch, setSearchQuery]);
+
   const allCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived).length;
   const unreadCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived && r.unreadCount && r.unreadCount > 0).length;
   const directCount = formattedRooms.filter((r: ChatRoom) => !r.isArchived && r.type === "direct").length;
@@ -107,8 +116,8 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
   return (
     <div className="w-full md:w-100 md:max-w-[430px] h-full flex flex-col border-r border-zinc-200/80 dark:border-zinc-900 bg-white dark:bg-zinc-950 flex-shrink-0 select-none">
       <ChatListHeader
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
+        searchQuery={localSearch}
+        onSearchChange={setLocalSearch}
         onNewChatClick={() => setIsNewChatView(true)}
       />
       <ChatFilterPills

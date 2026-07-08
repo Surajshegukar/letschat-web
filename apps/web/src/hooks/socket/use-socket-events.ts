@@ -107,6 +107,7 @@ export function useSocketEvents() {
             if (hasOfficialId) return old;
 
             // Replace the temp message with the actual socket message
+            let replaced = false;
             return {
               ...old,
               pages: old.pages.map((page) => ({
@@ -114,12 +115,16 @@ export function useSocketEvents() {
                 data: {
                   ...page.data,
                   messages: page.data.messages.map((m) => {
+                    if (replaced) return m;
                     const mSenderId = typeof m.senderId === "object" && m.senderId !== null ? m.senderId._id : m.senderId;
-                    return m._id.startsWith("temp-") &&
+                    const isMatch = m._id.startsWith("temp-") &&
                       m.content === rawMsg.content &&
-                      mSenderId === rawMsgSenderId
-                      ? rawMsg
-                      : m;
+                      mSenderId === rawMsgSenderId;
+                    if (isMatch) {
+                      replaced = true;
+                      return rawMsg;
+                    }
+                    return m;
                   }),
                 },
               })),

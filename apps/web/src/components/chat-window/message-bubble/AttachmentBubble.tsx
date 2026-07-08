@@ -9,6 +9,7 @@ interface AttachmentBubbleProps {
   messageId: string;
   isMe: boolean;
   senderAvatar?: string;
+  senderName?: string;
   content?: string;
   reactions: { emoji: string; userIds: string[] }[];
   onOpenGallery?: () => void;
@@ -19,6 +20,7 @@ export function AttachmentBubble({
   messageId,
   isMe,
   senderAvatar,
+  senderName,
   content,
   reactions,
   onOpenGallery,
@@ -27,11 +29,13 @@ export function AttachmentBubble({
 
   if (type === "audio") {
     return (
-      <div id={`msg-card-${messageId}`} className="relative transition-all duration-300 rounded-2xl">
+      <div id={`msg-card-${messageId}`} className="relative transition-all duration-350 rounded-2xl">
         <AudioPlayBubble
           duration={attachment.size}
-          senderAvatar={senderAvatar || (isMe ? "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150" : undefined)}
+          senderAvatar={senderAvatar}
+          senderName={senderName}
           isMe={isMe}
+          url={attachment.url}
         />
         <ReactionsBadge reactions={reactions} isMe={isMe} />
       </div>

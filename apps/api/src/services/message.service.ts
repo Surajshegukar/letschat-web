@@ -121,6 +121,12 @@ export class MessageService {
       replyTo: input.replyTo ? new mongoose.Types.ObjectId(input.replyTo) : undefined,
     });
 
+    // Find participants who currently have the conversation soft-deleted
+    const conversationBefore = await conversationRepository.findById(conversationId);
+    const deletedParticipantIds = conversationBefore?.participants
+      .filter((p: any) => p.isDeleted)
+      .map((p: any) => p.userId._id.toString()) || [];
+
     // 4. Update the last message in the conversation (denormalization)
     const contentPreview =
       input.type === "text"
@@ -136,6 +142,16 @@ export class MessageService {
 
     // 5. Update cursors in the Conversation collection
     const conversation = await conversationRepository.findById(conversationId);
+
+    // For each restored participant, send "new_conversation" event so they refresh and join socket room
+    if (conversationBefore && conversation) {
+      const { sanitizeConversationForUser } = await import("./conversation.service");
+      for (const pId of deletedParticipantIds) {
+        const sanitizedForUser = sanitizeConversationForUser(conversation, pId);
+        socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
+      }
+    }
+
     if (conversation) {
       const messageObjectId = message._id;
       const now = new Date();
@@ -196,22 +212,31 @@ export class MessageService {
   ): Promise<{ messages: any[]; nextCursor: string | null; hasMore: boolean }> {
     const limit = pagination.limit || 50;
 
-    // 1. Verify user is participant
-    const isMember = await conversationRepository.isParticipant(
-      conversationId,
-      userId
+    // 1. Fetch conversation participant states to construct dynamic read/delivered arrays and check membership
+    const conversation = await conversationRepository.findById(conversationId);
+    if (!conversation) {
+      const err: any = new Error("Conversation not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const selfParticipant = conversation.participants.find(
+      (p) => p.userId._id.toString() === userId
     );
-    if (!isMember) {
-      const err: any = new Error("Conversation not found or you are not a participant");
+    if (!selfParticipant) {
+      const err: any = new Error("You are not a participant of this conversation");
       err.statusCode = 403;
       throw err;
     }
+
+    const clearedAt = selfParticipant.clearedAt;
 
     // 2. Fetch messages (requests 1 extra item to check for hasMore)
     const messages = await messageRepository.findByConversation(
       conversationId,
       pagination.cursor,
-      limit + 1
+      limit + 1,
+      clearedAt
     );
 
     const hasMore = messages.length > limit;
@@ -221,8 +246,6 @@ export class MessageService {
 
     const nextCursor = hasMore && messages.length > 0 ? messages[messages.length - 1]!._id.toString() : null;
 
-    // Fetch conversation participant states to construct dynamic read/delivered arrays
-    const conversation = await conversationRepository.findById(conversationId);
     const formattedMessages = messages.map((m) => formatMessagePayload(m, conversation));
 
     return {
@@ -386,6 +409,37 @@ export class MessageService {
     });
 
     return serializedReactions;
+  }
+
+  /**
+   * Toggle starring a message.
+   */
+  async toggleStarMessage(
+    conversationId: string,
+    messageId: string,
+    userId: string
+  ): Promise<IMessage> {
+    const isMember = await conversationRepository.isParticipant(conversationId, userId);
+    if (!isMember) {
+      const err: any = new Error("You are not a participant of this conversation");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const message = await messageRepository.toggleStar(messageId);
+    if (!message) {
+      const err: any = new Error("Message not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    socketService.emitToConversation(conversationId, "message_starred_toggled", {
+      conversationId,
+      messageId,
+      isStarred: message.isStarred,
+    });
+
+    return message;
   }
 }
 

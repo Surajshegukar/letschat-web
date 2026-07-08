@@ -6,6 +6,10 @@ import { useMediaModal } from "@/hooks/use-media-modal";
 import { MediaTab } from "./MediaTab";
 import { DocsTab } from "./DocsTab";
 import { LinksTab } from "./LinksTab";
+import { useChatStore } from "@/store/chat-store";
+import { useMessages } from "@/hooks/api/use-conversations";
+import { formatMessage, RawMessage } from "@/utils/chat-helpers";
+import { useAuthStore } from "@/store/auth-store";
 
 interface MediaModalProps {
   isOpen: boolean;
@@ -15,6 +19,73 @@ interface MediaModalProps {
 
 export function MediaModal({ isOpen, onClose, roomName }: MediaModalProps) {
   const { activeTab, setActiveTab, copiedId, handleCopyLink } = useMediaModal(isOpen, onClose);
+
+  const activeRoomId = useChatStore((state) => state.activeRoomId);
+  const currentUserId = useAuthStore((state) => state.user?.id);
+  const { data: messagesData } = useMessages(activeRoomId || null);
+
+  const activeMessages = React.useMemo(() => {
+    if (!messagesData || !currentUserId) return [];
+    const allRawMessages = messagesData.pages.flatMap((page) => page.data.messages || []);
+    return allRawMessages.map((msg: RawMessage) => formatMessage(msg, currentUserId)).reverse();
+  }, [messagesData, currentUserId]);
+
+  const mediaList = React.useMemo(() => {
+    return activeMessages
+      .filter((msg) => msg.attachment && (msg.attachment.type === "image" || msg.attachment.type === "video") && !msg.isDeleted)
+      .map((msg) => ({
+        id: msg.id,
+        url: msg.attachment!.url!,
+        type: msg.attachment!.type!,
+        title: msg.attachment!.name,
+      }));
+  }, [activeMessages]);
+
+  const docsList = React.useMemo(() => {
+    return activeMessages
+      .filter((msg) => msg.attachment && (msg.attachment.type === "document" || msg.attachment.type === "audio") && !msg.isDeleted)
+      .map((msg) => {
+        const ext = msg.attachment!.name.split(".").pop() || "pdf";
+        let type = "pdf";
+        if (ext === "xlsx" || ext === "xls" || ext === "csv") type = "spreadsheet";
+        else if (ext === "zip" || ext === "rar" || ext === "gz") type = "zip";
+        else if (msg.attachment!.type === "audio") type = "audio";
+
+        return {
+          id: msg.id,
+          name: msg.attachment!.name,
+          url: msg.attachment!.url!,
+          type,
+          size: msg.attachment!.size || "0 KB",
+          date: msg.timestamp,
+        };
+      });
+  }, [activeMessages]);
+
+  const linksList = React.useMemo(() => {
+    return activeMessages
+      .filter((msg) => msg.content && /(https?:\/\/[^\s]+|www\.[^\s]+)/gi.test(msg.content) && !msg.isDeleted)
+      .flatMap((msg, idx) => {
+        const urls = msg.content.match(/(https?:\/\/[^\s]+|www\.[^\s]+)/gi) || [];
+        return urls.map((url, uidx) => {
+          let domain = "Link";
+          try {
+            const parsed = new URL(url.startsWith("http") ? url : `https://${url}`);
+            domain = parsed.hostname.replace("www.", "");
+          } catch (e) {}
+
+          return {
+            id: `${msg.id}-${uidx}`,
+            url: url.startsWith("http") ? url : `https://${url}`,
+            domain,
+            title: domain,
+            description: url,
+            thumbnail: "/assets/images/link-placeholder.png",
+            date: msg.timestamp,
+          };
+        });
+      });
+  }, [activeMessages]);
 
   if (!isOpen) return null;
 
@@ -34,13 +105,13 @@ export function MediaModal({ isOpen, onClose, roomName }: MediaModalProps) {
             <h3 className="text-lg font-bold text-slate-800 dark:text-white leading-tight">
               Shared Assets
             </h3>
-            <p className="text-xs text-zinc-400 dark:text-zinc-500 mt-1 leading-none">
+            <p className="text-xs text-zinc-450 dark:text-zinc-550 mt-1 leading-none">
               Shared with {roomName}
             </p>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-xl transition text-zinc-500"
+            className="p-2 hover:bg-zinc-100 dark:hover:bg-zinc-900 rounded-xl transition text-zinc-500"
           >
             <X className="h-5 w-5" />
           </button>
@@ -70,10 +141,10 @@ export function MediaModal({ isOpen, onClose, roomName }: MediaModalProps) {
 
         {/* Content View Area */}
         <div className="flex-1 overflow-y-auto p-6 bg-zinc-50/20 dark:bg-zinc-900/20">
-          {activeTab === "media" && <MediaTab />}
-          {activeTab === "docs" && <DocsTab />}
+          {activeTab === "media" && <MediaTab items={mediaList} />}
+          {activeTab === "docs" && <DocsTab items={docsList} />}
           {activeTab === "links" && (
-            <LinksTab copiedId={copiedId} onCopyLink={handleCopyLink} />
+            <LinksTab items={linksList} copiedId={copiedId} onCopyLink={handleCopyLink} />
           )}
         </div>
       </div>

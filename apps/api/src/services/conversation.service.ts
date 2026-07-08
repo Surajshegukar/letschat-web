@@ -5,6 +5,24 @@ import { Message } from "@/models/Message";
 import mongoose from "mongoose";
 import { socketService } from "./socket.service";
 
+export function sanitizeConversationForUser(conv: any, userId: string): any {
+  const convObj = typeof conv.toObject === "function" ? conv.toObject() : conv;
+
+  const selfParticipant = convObj.participants?.find(
+    (p: any) => (p.userId?._id || p.userId || "").toString() === userId
+  );
+
+  if (selfParticipant?.clearedAt && convObj.lastMessage) {
+    const clearedTime = new Date(selfParticipant.clearedAt).getTime();
+    const lastMsgTime = new Date(convObj.lastMessage.timestamp).getTime();
+    if (lastMsgTime <= clearedTime) {
+      delete convObj.lastMessage;
+    }
+  }
+
+  return convObj;
+}
+
 export class ConversationService {
   /**
    * Get all active conversations for a user.
@@ -31,15 +49,20 @@ export class ConversationService {
         const countQuery: any = {
           conversationId: conv._id,
           senderId: { $ne: new mongoose.Types.ObjectId(userId) },
+          isCleared: { $ne: true },
         };
         if (lastReadMessageId) {
           countQuery._id = { $gt: lastReadMessageId };
         }
+        if (selfParticipant?.clearedAt) {
+          countQuery.createdAt = { $gt: selfParticipant.clearedAt };
+        }
 
         const unreadCount = await Message.countDocuments(countQuery);
+        const sanitized = sanitizeConversationForUser(convObj, userId);
 
         return {
-          ...convObj,
+          ...sanitized,
           unreadCount
         };
       })
@@ -75,12 +98,34 @@ export class ConversationService {
       targetUserId
     );
     if (existing) {
-      // Still notify participants so their sockets join the room if needed
-      existing.participants.forEach((p) => {
-        const pId = p.userId._id.toString();
-        socketService.emitToUser(pId, "new_conversation", existing);
-      });
-      return existing;
+      // If the conversation was soft-deleted for either participant, restore it!
+      const conversationDoc = await conversationRepository.findById(existing._id.toString());
+      if (conversationDoc) {
+        let wasModified = false;
+        conversationDoc.participants.forEach((p) => {
+          if (p.isDeleted) {
+            p.isDeleted = false;
+            wasModified = true;
+          }
+        });
+        if (wasModified) {
+          await conversationDoc.save();
+        }
+      }
+
+      // Fetch latest populated conversation after restoration
+      const updatedConversation = await conversationRepository.findById(existing._id.toString());
+      if (updatedConversation) {
+        // Still notify participants so their sockets join the room if needed
+        updatedConversation.participants.forEach((p) => {
+          const pId = p.userId._id.toString();
+          const sanitizedForUser = sanitizeConversationForUser(updatedConversation, pId);
+          socketService.emitToUser(pId, "new_conversation", sanitizedForUser);
+        });
+        return updatedConversation;
+      }
+
+      return existing as unknown as IConversation;
     }
 
     // Create a new direct conversation
@@ -242,6 +287,55 @@ export class ConversationService {
       throw err;
     }
     return conversation;
+  }
+
+  /**
+   * Delete a conversation (soft delete by setting isActive: false) and all its messages.
+   */
+  async deleteConversation(conversationId: string, userId: string): Promise<{ message: string }> {
+    const isMember = await conversationRepository.isParticipant(conversationId, userId);
+    if (!isMember) {
+      const err: any = new Error("You are not a participant of this conversation");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    const conversation = await conversationRepository.deleteForUser(conversationId, userId);
+    if (!conversation) {
+      const err: any = new Error("Conversation not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Notify the deleting user over Socket.IO (so it is removed from their list)
+    socketService.emitToUser(userId, "conversation_deleted", { conversationId });
+
+    return { message: "Conversation deleted successfully" };
+  }
+
+  /**
+   * Clear all messages in a conversation.
+   */
+  async clearConversation(conversationId: string, userId: string): Promise<{ message: string }> {
+    const isMember = await conversationRepository.isParticipant(conversationId, userId);
+    if (!isMember) {
+      const err: any = new Error("You are not a participant of this conversation");
+      err.statusCode = 403;
+      throw err;
+    }
+
+    // Clear messages for this specific user
+    const conversation = await conversationRepository.clearForUser(conversationId, userId);
+    if (!conversation) {
+      const err: any = new Error("Conversation not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Notify only the user who cleared the conversation
+    socketService.emitToUser(userId, "conversation_cleared", { conversationId });
+
+    return { message: "Conversation cleared successfully" };
   }
 }
 

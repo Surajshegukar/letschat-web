@@ -20,6 +20,8 @@ router.post(
 router.get("/:id", authenticateJWT, conversationController.getConversation);
 router.patch("/:id/pin", authenticateJWT, conversationController.togglePinConversation);
 router.patch("/:id/archive", authenticateJWT, conversationController.toggleArchiveConversation);
+router.delete("/:id", authenticateJWT, conversationController.deleteConversation);
+router.delete("/:id/clear", authenticateJWT, conversationController.clearConversation);
 
 // Message endpoints nested inside conversations
 router.get(
@@ -42,6 +44,11 @@ router.patch(
   "/:conversationId/messages/:messageId",
   authenticateJWT,
   messageController.editMessage
+);
+router.patch(
+  "/:conversationId/messages/:messageId/star",
+  authenticateJWT,
+  messageController.toggleStarMessage
 );
 router.delete(
   "/:conversationId/messages/:messageId",

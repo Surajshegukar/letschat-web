@@ -5,16 +5,23 @@ import Link from "next/link";
 import { Input, Button, Checkbox, Divider } from "@/components/ui";
 import SocialLogin from "./SocialLogin";
 import { useRegister } from "@/hooks/api/use-auth";
+import { toast } from "sonner";
 
 export default function SignUpForm() {
-    const [username, setUsername] = useState("");
+    const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const registerMutation = useRegister();
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        registerMutation.mutate({ username, email, password });
+        
+        if (displayName.trim().length < 2) {
+            toast.error("Display name must be at least 2 characters long");
+            return;
+        }
+        
+        registerMutation.mutate({ displayName, email, password });
     };
 
     return (
@@ -41,10 +48,10 @@ export default function SignUpForm() {
                     <div>
                         <Input
                             type="text"
-                            label="Username"
-                            placeholder="johndoe"
-                            value={username}
-                            onChange={(e) => setUsername(e.target.value)}
+                            label="Full Name"
+                            placeholder="John Doe"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
                             required
                         />
                     </div>

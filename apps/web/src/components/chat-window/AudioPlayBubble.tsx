@@ -1,22 +1,32 @@
 import React from "react";
 import { Play, Pause } from "lucide-react";
 import { useAudioPlayer } from "@/hooks/use-audio-player";
+import { Avatar } from "../ui";
+import { useAuthStore } from "@/store/auth-store";
 
 const WAVEFORM_BARS = [40, 60, 20, 80, 50, 90, 30, 70, 40, 60, 85, 20, 55, 75, 45, 95, 30, 65, 80, 50];
 
 interface AudioPlayBubbleProps {
   duration?: string;
   senderAvatar?: string;
+  senderName?: string;
   isMe: boolean;
+  url?: string;
 }
 
 export function AudioPlayBubble({
   duration = "0:12",
-  senderAvatar = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150",
+  senderAvatar,
+  senderName,
   isMe,
+  url,
 }: AudioPlayBubbleProps) {
-  const { isPlaying, progress, currentSeconds, togglePlay, formatTime } = useAudioPlayer(duration);
+  const { isPlaying, progress, currentSeconds, togglePlay, formatTime } = useAudioPlayer(duration, url);
   const activeIdx = Math.floor((progress / 100) * WAVEFORM_BARS.length);
+
+  const currentUser = useAuthStore((state) => state.user);
+  const actualAvatar = isMe ? currentUser?.avatarUrl : senderAvatar;
+  const actualName = isMe ? (currentUser?.displayName || currentUser?.username || "You") : senderName;
 
   return (
     <div className={`flex items-center gap-3 w-[280px] p-2.5 rounded-2xl ${
@@ -55,10 +65,11 @@ export function AudioPlayBubble({
         </div>
       </div>
 
-      <img
-        src={senderAvatar}
-        alt="Avatar"
-        className="h-8 w-8 rounded-full object-cover border border-zinc-200/60 dark:border-zinc-800 shadow-sm flex-shrink-0"
+      <Avatar
+        src={actualAvatar}
+        name={actualName}
+        size="xs"
+        className="border border-zinc-200/60 dark:border-zinc-800 shadow-sm flex-shrink-0"
       />
     </div>
   );

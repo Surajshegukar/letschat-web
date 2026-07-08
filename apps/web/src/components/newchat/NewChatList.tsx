@@ -8,6 +8,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { useRealtimeStore } from "@/store/realtime-store";
 import { useSocket } from "@/providers/socket-provider";
 import { toast } from "sonner";
+import { Avatar } from "../ui";
 
 interface NewChatListProps {
     onBack: () => void;
@@ -184,10 +185,11 @@ export function NewChatList({ onBack, onSelectRoom }: NewChatListProps) {
                             onClick={() => handleSelectUser(currentUser.id)}
                             className="w-full flex items-center gap-4 p-2.5 hover:bg-zinc-50 dark:hover:bg-zinc-900/50 rounded-2xl transition text-left"
                         >
-                            <img
-                                src={currentUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
-                                className="h-11 w-11 rounded-full object-cover border border-zinc-200 dark:border-zinc-800 shadow-sm"
-                                alt="Avatar"
+                            <Avatar
+                                src={currentUser.avatarUrl}
+                                name={currentUser.displayName || currentUser.username}
+                                size="lg"
+                                className="border border-zinc-200 dark:border-zinc-800 shadow-sm"
                             />
                             <div className="min-w-0">
                                 <p className="text-sm font-bold text-slate-850 dark:text-zinc-200 truncate">
@@ -234,10 +236,11 @@ export function NewChatList({ onBack, onSelectRoom }: NewChatListProps) {
                                         >
                                             {/* Avatar with online dot */}
                                             <div className="relative flex-shrink-0">
-                                                <img
-                                                    src={contact.avatar || contact.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150"}
-                                                    className="h-11 w-11 rounded-full object-cover border border-zinc-200 dark:border-zinc-800 shadow-sm"
-                                                    alt="Avatar"
+                                                <Avatar
+                                                    src={contact.avatar || contact.avatarUrl}
+                                                    name={contact.displayName || contact.username}
+                                                    size="lg"
+                                                    className="border border-zinc-200 dark:border-zinc-800 shadow-sm"
                                                 />
                                                 {/* Online/Offline indicator */}
                                                 <span

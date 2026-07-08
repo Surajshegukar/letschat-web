@@ -30,18 +30,7 @@ export class UserService {
       throw err;
     }
 
-    const { username, displayName, about, avatar, avatarUrl } = input;
-
-    // If username is changing, ensure it is unique
-    if (username && username !== user.username) {
-      const isUsernameTaken = await userRepository.existsByUsername(username);
-      if (isUsernameTaken) {
-        const err: any = new Error("Username is already taken");
-        err.statusCode = 409;
-        throw err;
-      }
-      user.username = username;
-    }
+    const { displayName, about, avatar, avatarUrl } = input;
 
     if (displayName !== undefined) {
       user.displayName = displayName;

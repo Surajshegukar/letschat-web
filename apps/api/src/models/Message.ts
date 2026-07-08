@@ -38,7 +38,10 @@ export interface IMessage extends Document {
   readBy?: IReadBy[];
   isEdited: boolean;
   isDeleted: boolean;
+  isStarred: boolean;
   deletedAt?: Date;
+  isCleared?: boolean;
+  clearedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -153,7 +156,18 @@ const messageSchema = new Schema<IMessage>(
       type: Boolean,
       default: false,
     },
+    isStarred: {
+      type: Boolean,
+      default: false,
+    },
     deletedAt: {
+      type: Date,
+    },
+    isCleared: {
+      type: Boolean,
+      default: false,
+    },
+    clearedAt: {
       type: Date,
     },
   },

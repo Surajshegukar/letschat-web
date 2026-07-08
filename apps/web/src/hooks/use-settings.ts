@@ -13,7 +13,7 @@ export function useSettings() {
 
   // Profile Editor States
   const [isEditingName, setIsEditingName] = useState(false);
-  const [tempName, setTempName] = useState(user?.username || "");
+  const [tempName, setTempName] = useState(user?.displayName || user?.username || "");
   const [isEditingAbout, setIsEditingAbout] = useState(false);
   const [tempAbout, setTempAbout] = useState(user?.about || "");
   const [showAvatarChooser, setShowAvatarChooser] = useState(false);
@@ -40,7 +40,7 @@ export function useSettings() {
 
   const handleSaveName = () => {
     if (tempName.trim()) {
-      updateProfileMutation.mutate({ username: tempName });
+      updateProfileMutation.mutate({ displayName: tempName });
     }
     setIsEditingName(false);
   };

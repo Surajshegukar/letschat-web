@@ -21,6 +21,9 @@ export function SettingsChatsView({ theme, setTheme }: SettingsChatsViewProps) {
             <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
               Application Theme
             </span>
+            <span className="bg-emerald-500/10 text-emerald-650 dark:text-[#19E68C] px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+              Functional
+            </span>
           </div>
           <select
             value={theme}
@@ -42,9 +45,14 @@ export function SettingsChatsView({ theme, setTheme }: SettingsChatsViewProps) {
         <div className="flex items-center gap-3">
           <Wallpaper className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
           <div>
-            <p className="text-xs font-bold text-slate-855 dark:text-zinc-200">
-              Chat Wallpaper
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-xs font-bold text-slate-855 dark:text-zinc-200">
+                Chat Wallpaper
+              </p>
+              <span className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider">
+                Coming Soon
+              </span>
+            </div>
             <p className="text-[9px] text-zinc-450 dark:text-zinc-500 font-semibold mt-0.5">
               Choose backdrop details for message feeds.
             </p>
@@ -64,6 +72,9 @@ export function SettingsChatsView({ theme, setTheme }: SettingsChatsViewProps) {
           <History className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
           <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
             Chat Archive Logs
+          </span>
+          <span className="bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 px-1.5 py-0.5 rounded text-[8px] font-extrabold uppercase tracking-wider ml-2">
+            Coming Soon
           </span>
         </div>
         <p className="text-[10px] text-zinc-455 dark:text-zinc-500 leading-normal font-semibold">

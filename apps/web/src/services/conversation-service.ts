@@ -119,4 +119,28 @@ export const conversationService = {
     });
     return response.data;
   },
+
+  /**
+   * Delete a conversation and all its messages.
+   */
+  async deleteConversation(id: string) {
+    const response = await api.delete(`/conversations/${id}`);
+    return response.data;
+  },
+
+  /**
+   * Clear all messages in a conversation.
+   */
+  async clearConversation(id: string) {
+    const response = await api.delete(`/conversations/${id}/clear`);
+    return response.data;
+  },
+
+  /**
+   * Toggle the starred state of a message.
+   */
+  async starMessage(conversationId: string, messageId: string) {
+    const response = await api.patch(`/conversations/${conversationId}/messages/${messageId}/star`);
+    return response.data;
+  },
 };

@@ -5,6 +5,7 @@ import { env } from "./config/env";
 import { connectDatabase } from "./database/connection";
 import { setupSocketHandlers } from "./sockets/handler";
 import { logger } from "./utils/logger";
+import { User } from "./models/User";
 
 import { createAdapter } from "@socket.io/redis-adapter";
 import { redisClient, redisSubClient } from "./config/redis";
@@ -35,6 +36,14 @@ setupSocketHandlers(io);
 async function startServer() {
   // Connect to database
   await connectDatabase();
+
+  // Sync database indexes
+  try {
+    await User.syncIndexes();
+    logger.info("Database indexes synchronized successfully");
+  } catch (error) {
+    logger.error(`Failed to synchronize indexes: ${error}`);
+  }
 
   const PORT = env.PORT;
   server.listen(PORT, () => {

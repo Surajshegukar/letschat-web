@@ -10,18 +10,18 @@ interface RecordingBarProps {
 
 export function RecordingBar({ recordingSeconds, formatRecordTime, onCancel, onSend }: RecordingBarProps) {
   return (
-    <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-zinc-900/60 p-2.5 rounded-xl border border-red-200/30 dark:border-zinc-800/40 animate-pulse w-full">
-      <div className="flex items-center gap-2.5 pl-2">
+    <div className="flex items-center justify-between gap-3 bg-red-50 dark:bg-zinc-900/60 p-2.5 rounded-full border border-red-200/30 dark:border-zinc-800/40 animate-pulse w-full">
+      <div className="flex items-center gap-2.5 pl-3">
         <span className="h-2.5 w-2.5 rounded-full bg-rose-500 animate-ping flex-shrink-0" />
         <span className="text-xs font-extrabold text-rose-600 dark:text-rose-455">
           Recording Voice Note ({formatRecordTime(recordingSeconds)})
         </span>
       </div>
-      <div className="flex items-center gap-2 pr-1">
+      <div className="flex items-center gap-2 pr-1.5">
         <button
           type="button"
           onClick={onCancel}
-          className="p-2 hover:bg-red-100 dark:hover:bg-zinc-800 text-rose-500 hover:text-rose-600 rounded-lg transition"
+          className="p-2 hover:bg-red-100 dark:hover:bg-zinc-800 text-rose-500 hover:text-rose-600 rounded-full transition"
           title="Cancel Recording"
         >
           <Trash2 className="h-4 w-4" />
@@ -29,7 +29,7 @@ export function RecordingBar({ recordingSeconds, formatRecordTime, onCancel, onS
         <button
           type="button"
           onClick={onSend}
-          className="h-8.5 w-8.5 flex items-center justify-center bg-gradient-to-r from-emerald-500 to-[#19E68C] text-[#09090B] rounded-lg shadow-sm hover:opacity-90 active:scale-95 transition"
+          className="h-8.5 w-8.5 flex items-center justify-center bg-gradient-to-r from-emerald-500 to-[#19E68C] text-[#09090B] rounded-full shadow-sm hover:opacity-90 active:scale-95 transition"
           title="Send Voice Note"
         >
           <Check className="h-4.5 w-4.5 font-bold" />

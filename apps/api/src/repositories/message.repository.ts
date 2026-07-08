@@ -1,5 +1,6 @@
 import { Message, IMessage } from "@/models/Message";
 import mongoose, { UpdateQuery } from "mongoose";
+import { sanitizeDeletedUser } from "@/repositories/user.repository";
 
 export const messageRepository = {
   /**
@@ -9,12 +10,12 @@ export const messageRepository = {
     const message = new Message(data);
     const saved = await message.save();
     return saved.populate([
-      { path: "senderId", select: "username email displayName avatar about isOnline lastSeen" },
+      { path: "senderId", select: "username email displayName avatar about isOnline lastSeen isDeleted" },
       {
         path: "replyTo",
         populate: {
           path: "senderId",
-          select: "username email displayName avatar about isOnline lastSeen",
+          select: "username email displayName avatar about isOnline lastSeen isDeleted",
         },
       },
     ]);
@@ -25,12 +26,12 @@ export const messageRepository = {
    */
   async findById(id: string): Promise<IMessage | null> {
     return Message.findById(id)
-      .populate("senderId", "username email displayName avatar about isOnline lastSeen")
+      .populate("senderId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .populate({
         path: "replyTo",
         populate: {
           path: "senderId",
-          select: "username email displayName avatar about isOnline lastSeen",
+          select: "username email displayName avatar about isOnline lastSeen isDeleted",
         },
       })
       .exec();
@@ -43,29 +44,47 @@ export const messageRepository = {
   async findByConversation(
     conversationId: string,
     cursorId?: string,
-    limit: number = 50
+    limit: number = 50,
+    clearedAt?: Date
   ): Promise<IMessage[]> {
     const query: any = {
       conversationId,
+      isCleared: { $ne: true },
     };
 
     if (cursorId) {
       query._id = { $lt: new mongoose.Types.ObjectId(cursorId) };
     }
 
-    return Message.find(query)
-      .populate("senderId", "username email displayName avatar about isOnline lastSeen")
+    if (clearedAt) {
+      query.createdAt = { $gt: clearedAt };
+    }
+
+    const messages = await Message.find(query)
+      .populate("senderId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .populate({
         path: "replyTo",
         populate: {
           path: "senderId",
-          select: "username email displayName avatar about isOnline lastSeen",
+          select: "username email displayName avatar about isOnline lastSeen isDeleted",
         },
       })
       .sort({ _id: -1 }) // Newest messages first
       .limit(limit)
       .lean()
-      .exec() as unknown as Promise<IMessage[]>;
+      .exec();
+
+    // Sanitize soft-deleted senders in messages
+    messages.forEach((msg: any) => {
+      if (msg.senderId) {
+        sanitizeDeletedUser(msg.senderId);
+      }
+      if (msg.replyTo && msg.replyTo.senderId) {
+        sanitizeDeletedUser(msg.replyTo.senderId);
+      }
+    });
+
+    return messages as unknown as IMessage[];
   },
 
   /**
@@ -76,7 +95,7 @@ export const messageRepository = {
     update: UpdateQuery<IMessage>
   ): Promise<IMessage | null> {
     return Message.findByIdAndUpdate(id, update, { new: true })
-      .populate("senderId", "username email displayName avatar about isOnline lastSeen")
+      .populate("senderId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .exec();
   },
 
@@ -94,7 +113,24 @@ export const messageRepository = {
       },
       { new: true }
     )
-      .populate("senderId", "username email displayName avatar about isOnline lastSeen")
+      .populate("senderId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .exec();
+  },
+
+  /**
+   * Soft delete all messages in a conversation.
+   */
+  async deleteByConversation(conversationId: string): Promise<void> {
+    await Message.updateMany({ conversationId }, { isCleared: true, clearedAt: new Date() }).exec();
+  },
+
+  /**
+   * Toggle the starred state of a message.
+   */
+  async toggleStar(id: string): Promise<IMessage | null> {
+    const msg = await Message.findById(id);
+    if (!msg) return null;
+    msg.isStarred = !msg.isStarred;
+    return msg.save();
   },
 };

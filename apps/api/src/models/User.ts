@@ -22,6 +22,8 @@ export interface IUser extends Document {
     expiresAt: Date;
     device?: string;
   }[];
+  isDeleted: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
@@ -32,7 +34,6 @@ const userSchema = new Schema<IUser>(
     username: {
       type: String,
       required: [true, "Username is required"],
-      unique: true,
       trim: true,
       minlength: [3, "Username must be at least 3 characters"],
       maxlength: [20, "Username must not exceed 20 characters"],
@@ -41,7 +42,6 @@ const userSchema = new Schema<IUser>(
     email: {
       type: String,
       required: [true, "Email is required"],
-      unique: true,
       lowercase: true,
       trim: true,
     },
@@ -116,6 +116,13 @@ const userSchema = new Schema<IUser>(
       ],
       select: false,
     },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
   },
   {
     timestamps: true,
@@ -123,8 +130,8 @@ const userSchema = new Schema<IUser>(
 );
 
 // ── Indexes ──────────────────────────────────────────────────────────────
-userSchema.index({ email: 1 });
-userSchema.index({ username: 1 });
+userSchema.index({ email: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
+userSchema.index({ username: 1 }, { unique: true, partialFilterExpression: { isDeleted: { $ne: true } } });
 userSchema.index({ isOnline: 1 });
 
 // ── Pre-save: Hash password if modified ──────────────────────────────────
@@ -151,6 +158,14 @@ userSchema.methods.comparePassword = async function (
 userSchema.methods.toJSON = function () {
   const obj = this.toObject();
   obj.avatarUrl = obj.avatar;
+  if (obj.isDeleted) {
+    obj.username = "deleted_user";
+    obj.email = "";
+    obj.displayName = obj.displayName || "Deleted User";
+    obj.avatar = undefined;
+    obj.avatarUrl = undefined;
+    obj.about = "This account was deleted.";
+  }
   delete obj.password;
   delete obj.refreshTokens;
   delete obj.verificationToken;

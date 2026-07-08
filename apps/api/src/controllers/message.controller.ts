@@ -201,6 +201,34 @@ export class MessageController {
       next(error);
     }
   };
+
+  /**
+   * Toggle starring a message.
+   */
+  toggleStarMessage = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { conversationId, messageId } = req.params;
+      const userId = req.user!.id;
+
+      const message = await messageService.toggleStarMessage(
+        conversationId!,
+        messageId!,
+        userId
+      );
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { message },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const messageController = new MessageController();

@@ -11,6 +11,10 @@ interface MessageFeedProps {
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   isTyping?: boolean;
   typingSenderName?: string;
+  searchQuery?: string;
+  isSelectionMode?: boolean;
+  selectedMessageIds?: Set<string>;
+  onToggleSelectMessage?: (messageId: string) => void;
 }
 
 function TypingIndicator({ name }: { name: string }) {
@@ -37,13 +41,16 @@ export function MessageFeed({
   messagesEndRef,
   isTyping = false,
   typingSenderName = "Olivia",
+  searchQuery = "",
+  isSelectionMode = false,
+  selectedMessageIds = new Set(),
+  onToggleSelectMessage,
 }: MessageFeedProps) {
   const feedItems = useMessageFeed(messages);
 
   return (
     <div
-      className="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-zinc-50/90 dark:bg-[#09090B]/95 dark:bg-blend-multiply relative"
-      style={{ backgroundImage: "url('/assets/images/wallpaper.png')", backgroundSize: "360px", backgroundRepeat: "repeat" }}
+      className="flex-1 overflow-y-auto px-8 py-6 space-y-4 bg-transparent relative"
     >
       <div className="relative z-2 h-full">
         <div className="flex justify-center my-4">
@@ -55,9 +62,22 @@ export function MessageFeed({
         <div className="space-y-4">
           {feedItems.map((item) =>
             (item as MediaGroup).type === "media_group" ? (
-              <MediaGroupBubble key={item.id} group={item as MediaGroup} />
+              <MediaGroupBubble
+                key={item.id}
+                group={item as MediaGroup}
+                isSelectionMode={isSelectionMode}
+                selectedMessageIds={selectedMessageIds}
+                onToggleSelectMessage={onToggleSelectMessage}
+              />
             ) : (
-              <MessageBubble key={item.id} message={item as Message} />
+              <MessageBubble
+                key={item.id}
+                message={item as Message}
+                highlightQuery={searchQuery}
+                isSelectionMode={isSelectionMode}
+                selectedMessageIds={selectedMessageIds}
+                onToggleSelectMessage={onToggleSelectMessage}
+              />
             )
           )}
         </div>

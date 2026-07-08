@@ -92,7 +92,7 @@ export function Sidebar() {
       <SidebarFooter
         isCollapsed={isCollapsed}
         avatarUrl={user?.avatarUrl}
-        userName={user?.username}
+        userName={user?.displayName || user?.username}
         status={user?.about}
         onClick={openProfileDrawer}
       />

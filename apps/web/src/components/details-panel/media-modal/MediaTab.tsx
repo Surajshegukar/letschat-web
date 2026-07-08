@@ -1,11 +1,27 @@
-import React from "react";
 import { Play, Download } from "lucide-react";
-import { mockMedia } from "@/constants/mock-data";
 
-export function MediaTab() {
+interface MediaTabProps {
+  items?: {
+    id: string;
+    url: string;
+    type: string;
+    title: string;
+  }[];
+}
+
+export function MediaTab({ items = [] }: MediaTabProps) {
+  if (items.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-zinc-450 dark:text-zinc-500 py-16 text-center">
+        <p className="text-sm font-bold">No shared media</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-550 mt-1.5">Photos and videos shared in this chat will appear here.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-3 gap-3">
-      {mockMedia.map((item) => (
+      {items.map((item) => (
         <div
           key={item.id}
           className="group relative aspect-video sm:aspect-square rounded-2xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-zinc-200/50 dark:border-zinc-800/80 cursor-pointer shadow-sm hover:shadow-md transition"

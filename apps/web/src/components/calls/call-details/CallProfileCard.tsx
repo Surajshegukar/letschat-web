@@ -1,5 +1,6 @@
 import React from "react";
 import { Phone, Video } from "lucide-react";
+import { Avatar } from "../../ui";
 
 interface CallProfileCardProps {
   name: string;
@@ -11,7 +12,7 @@ interface CallProfileCardProps {
 
 export function CallProfileCard({
   name,
-  avatarUrl = "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200",
+  avatarUrl,
   isOnline = false,
   onStartAudioCall,
   onStartVideoCall,
@@ -19,10 +20,10 @@ export function CallProfileCard({
   return (
     <div className="bg-white dark:bg-zinc-900 border border-zinc-200/85 dark:border-zinc-800 rounded-3xl p-6 shadow-md text-center flex flex-col items-center">
       <div className="relative">
-        <img
+        <Avatar
           src={avatarUrl}
-          className="h-24 w-24 rounded-full object-cover shadow-md border-2 border-zinc-100 dark:border-zinc-800"
-          alt={name}
+          name={name}
+          className="!h-24 !w-24 shadow-md border-2 border-zinc-100 dark:border-zinc-800"
         />
         {isOnline && (
           <span className="absolute bottom-1 right-1.5 h-3.5 w-3.5 rounded-full bg-green-500 border-2 border-white dark:border-zinc-950" />

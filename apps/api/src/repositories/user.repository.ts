@@ -2,6 +2,22 @@ import { User, IUser } from "@/models/User";
 import { FilterQuery, UpdateQuery } from "mongoose";
 
 /**
+ * Helper to sanitize user objects if they are soft-deleted.
+ * Useful for lean queries where schema toJSON doesn't run.
+ */
+export function sanitizeDeletedUser(user: any) {
+  if (user && user.isDeleted) {
+    user.username = "deleted_user";
+    user.email = "";
+    user.displayName = "Deleted User";
+    user.avatar = undefined;
+    user.avatarUrl = undefined;
+    user.about = "This account was deleted.";
+  }
+  return user;
+}
+
+/**
  * User Repository — Data access layer for User documents.
  * All MongoDB operations for users go through this class.
  * Controllers and services never touch Mongoose directly.
@@ -14,7 +30,7 @@ export const userRepository = {
     email: string,
     selectFields?: string
   ): Promise<IUser | null> {
-    const query = User.findOne({ email: email.toLowerCase() });
+    const query = User.findOne({ email: email.toLowerCase(), isDeleted: { $ne: true } });
     if (selectFields) query.select(selectFields);
     return query.exec();
   },
@@ -23,7 +39,7 @@ export const userRepository = {
    * Find a user by ID. Does NOT include sensitive fields by default.
    */
   async findById(id: string, selectFields?: string): Promise<IUser | null> {
-    const query = User.findById(id);
+    const query = User.findOne({ _id: id, isDeleted: { $ne: true } });
     if (selectFields) query.select(selectFields);
     return query.exec();
   },
@@ -32,7 +48,7 @@ export const userRepository = {
    * Find a user by username.
    */
   async findByUsername(username: string): Promise<IUser | null> {
-    return User.findOne({ username }).exec();
+    return User.findOne({ username, isDeleted: { $ne: true } }).exec();
   },
 
   /**
@@ -42,7 +58,7 @@ export const userRepository = {
     filter: FilterQuery<IUser>,
     selectFields?: string
   ): Promise<IUser | null> {
-    const query = User.findOne(filter);
+    const query = User.findOne({ ...filter, isDeleted: { $ne: true } });
     if (selectFields) query.select(selectFields);
     return query.exec();
   },
@@ -62,7 +78,7 @@ export const userRepository = {
     id: string,
     update: UpdateQuery<IUser>
   ): Promise<IUser | null> {
-    return User.findByIdAndUpdate(id, update, { new: true }).exec();
+    return User.findOneAndUpdate({ _id: id, isDeleted: { $ne: true } }, update, { new: true }).exec();
   },
 
   /**
@@ -71,6 +87,7 @@ export const userRepository = {
   async existsByEmail(email: string): Promise<boolean> {
     const count = await User.countDocuments({
       email: email.toLowerCase(),
+      isDeleted: { $ne: true },
     }).exec();
     return count > 0;
   },
@@ -79,7 +96,7 @@ export const userRepository = {
    * Check if a user with the given username already exists.
    */
   async existsByUsername(username: string): Promise<boolean> {
-    const count = await User.countDocuments({ username }).exec();
+    const count = await User.countDocuments({ username, isDeleted: { $ne: true } }).exec();
     return count > 0;
   },
 
@@ -96,6 +113,7 @@ export const userRepository = {
     // When query has text, filter by username/email/displayName regex.
     const filter: FilterQuery<IUser> = {
       _id: { $ne: excludeUserId },
+      isDeleted: { $ne: true },
     };
 
     if (query.trim()) {
@@ -116,9 +134,14 @@ export const userRepository = {
   },
 
   /**
-   * Delete a user by ID.
+   * Delete a user by ID (soft delete).
+   * Preserves username and email so they can request account recovery.
    */
   async deleteById(id: string): Promise<IUser | null> {
-    return User.findByIdAndDelete(id).exec();
+    const user = await User.findById(id);
+    if (!user) return null;
+    user.isDeleted = true;
+    user.deletedAt = new Date();
+    return user.save();
   },
 };

@@ -1,16 +1,33 @@
 import React from "react";
 import { Link2, Copy, Check, ExternalLink } from "lucide-react";
-import { mockLinks } from "@/constants/mock-data";
 
 interface LinksTabProps {
+  items?: {
+    id: string;
+    url: string;
+    domain: string;
+    title: string;
+    description: string;
+    thumbnail: string;
+    date: string;
+  }[];
   copiedId: string | null;
   onCopyLink: (id: string, url: string) => void;
 }
 
-export function LinksTab({ copiedId, onCopyLink }: LinksTabProps) {
+export function LinksTab({ items = [], copiedId, onCopyLink }: LinksTabProps) {
+  if (items.length === 0) {
+    return (
+      <div className="h-full flex flex-col items-center justify-center text-zinc-450 dark:text-zinc-500 py-16 text-center">
+        <p className="text-sm font-bold">No shared links</p>
+        <p className="text-xs text-zinc-400 dark:text-zinc-550 mt-1.5">Links shared in this chat will appear here.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-3">
-      {mockLinks.map((link) => (
+      {items.map((link) => (
         <div
           key={link.id}
           className="flex p-4 rounded-2xl bg-white dark:bg-zinc-850 border border-zinc-200/60 dark:border-zinc-800/80 shadow-sm hover:border-[#19E68C]/30 hover:shadow-md transition gap-4 text-left"

@@ -2,11 +2,12 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useChatStore } from "@/store/chat-store";
 import { EMOJI_CATEGORIES, EMOJI_KEYWORDS } from "@/constants/emoji-data";
 import { validateFiles } from "@/constants/file-validation";
+import { toast } from "sonner";
 
 interface UseMessageInputProps {
   inputText: string;
   onChangeInput: (text: string) => void;
-  onSendVoiceNote?: (duration: string) => void;
+  onSendVoiceNote?: (file: File, duration: string) => void;
   onSendFiles?: (files: File[], captions: string[]) => void;
 }
 
@@ -37,6 +38,10 @@ export function useMessageInput({
   const docInputRef = useRef<HTMLInputElement | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const recordingSecondsRef = useRef(0);
+
   const replyingToMessage = useChatStore((state) => state.replyingToMessage);
   const setReplyingToMessage = useChatStore((state) => state.setReplyingToMessage);
   const editingMessage = useChatStore((state) => state.editingMessage);
@@ -53,7 +58,14 @@ export function useMessageInput({
   useEffect(() => {
     if (isRecording) {
       setRecordingSeconds(0);
-      timerRef.current = setInterval(() => setRecordingSeconds((p) => p + 1), 1000);
+      recordingSecondsRef.current = 0;
+      timerRef.current = setInterval(() => {
+        setRecordingSeconds((p) => {
+          const next = p + 1;
+          recordingSecondsRef.current = next;
+          return next;
+        });
+      }, 1000);
     } else {
       if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     }
@@ -106,15 +118,59 @@ export function useMessageInput({
     setPendingFiles((prev) => prev.map((p, i) => i === index ? { ...p, caption } : p));
   };
 
-  const handleStartRecording = () => { setIsRecording(true); setIsMenuOpen(false); setIsEmojiOpen(false); };
-  const handleCancelRecording = () => { setIsRecording(false); setRecordingSeconds(0); };
+  const handleStartRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+
+      mediaRecorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        stream.getTracks().forEach((track) => track.stop());
+
+        const audioFile = new File([audioBlob], `voice-note-${Date.now()}.webm`, {
+          type: "audio/webm",
+        });
+
+        const mins = Math.floor(recordingSecondsRef.current / 60);
+        const secs = recordingSecondsRef.current % 60;
+        const formatted = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+
+        if (onSendVoiceNote) {
+          onSendVoiceNote(audioFile, formatted === "0:00" ? "0:02" : formatted);
+        }
+      };
+
+      mediaRecorder.start();
+      setIsRecording(true);
+      setIsMenuOpen(false);
+      setIsEmojiOpen(false);
+    } catch (err) {
+      console.error("Failed to access microphone", err);
+      toast.error("Microphone access is required to record voice notes");
+    }
+  };
+
+  const handleCancelRecording = () => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      audioChunksRef.current = [];
+      mediaRecorderRef.current.stop();
+    }
+    setIsRecording(false);
+    setRecordingSeconds(0);
+    recordingSecondsRef.current = 0;
+  };
 
   const handleSendVoiceNote = () => {
-    if (onSendVoiceNote) {
-      const mins = Math.floor(recordingSeconds / 60);
-      const secs = recordingSeconds % 60;
-      const formatted = `${mins}:${secs < 10 ? "0" : ""}${secs}`;
-      onSendVoiceNote(formatted === "0:00" ? "0:02" : formatted);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
     }
     setIsRecording(false);
     setRecordingSeconds(0);
