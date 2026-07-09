@@ -417,6 +417,10 @@ export function useSocketEvents() {
       });
     };
 
+    const onStatusUpdate = () => {
+      queryClient.invalidateQueries({ queryKey: ["statuses"] });
+    };
+
     socket.on("initial_online_users", onInitialOnlineUsers);
     socket.on("new_conversation", onNewConversation);
     socket.on("new_message", onNewMessage);
@@ -429,6 +433,7 @@ export function useSocketEvents() {
     socket.on("message_deleted", onMessageDeleted);
     socket.on("typing_indicator", onTypingIndicator);
     socket.on("typing_stopped", onTypingStopped);
+    socket.on("status_update", onStatusUpdate);
 
     return () => {
       socket.off("initial_online_users", onInitialOnlineUsers);
@@ -443,6 +448,7 @@ export function useSocketEvents() {
       socket.off("message_deleted", onMessageDeleted);
       socket.off("typing_indicator", onTypingIndicator);
       socket.off("typing_stopped", onTypingStopped);
+      socket.off("status_update", onStatusUpdate);
     };
   }, [socket, isConnected, queryClient, setUserOnline, setUserOffline, setOnlineUsers, setTyping, removeTyping, activeRoomId]);
 }

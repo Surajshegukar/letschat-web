@@ -18,6 +18,13 @@ Track all in-progress and upcoming work here. Update this file when starting or 
 
 ## ✅ Completed
 
+### Phase 4A — Status & Stories (COMPLETE)
+- [x] Create Mongoose Status model with TTL auto-cleanup (24 hours)
+- [x] Implement backend Status repository, service, validators, controllers, and routes
+- [x] Emit real-time Socket.IO status updates to contacts
+- [x] Integrate React Query queries and mutations on the frontend Status service and hook
+- [x] Wire up real-time Socket status updates frontend-side
+
 ### Real-Time Chat Performance & Local Cache Optimization (COMPLETE)
 - [x] Batch MongoDB database query in `sendMessage` to eliminate N+1 latency bottleneck
 - [x] Implement frontend optimistic updates for `useSendMessage` to render messages instantly on dispatch
@@ -67,6 +74,8 @@ Track all in-progress and upcoming work here. Update this file when starting or 
 - [x] SignInForm, SignUpForm connected to real API mutations
 - [x] `auth-store.ts` stores token in memory only (no localStorage)
 - [x] Axios interceptor handles 401 → auto-refresh → retry with queue
+- [x] Fix Axios response interceptor to bypass token refresh logic on auth-related requests, resolving the login loop bug
+- [x] Modify backend `authenticateJWT` middleware to return 401 instead of 403 on token verification failure to properly support frontend auto-refresh
 
 ### Frontend UI (Static/Demo Mode)
 - [x] All pages: splash, sign-in, sign-up, forgot-password, reset-password, verify-email
@@ -97,7 +106,6 @@ See `docs/implementation_plan.md` for the full phased breakdown.
 - Phase 3D: Group Chat
 - Phase 3E: Message Operations (edit, delete, react, reply, pin)
 - Phase 3F: Search & Push Notifications
-- Phase 4A: Status/Stories API
 - Phase 4B: Voice & Video Calls (WebRTC)
 - Phase 4C: Channels & Communities API
 - Phase 5: Production Hardening (Docker, CI/CD, monitoring, testing)

@@ -7,6 +7,11 @@ Format: `## [version] — YYYY-MM-DD` with sections Added / Changed / Fixed / Re
 
 ## [0.3.0] — In Progress
 
+### Fixed
+- **Authentication Token Loop Bug**:
+  - Excluded authentication endpoints (`/auth/login`, `/auth/refresh`, `/auth/register`, `/auth/verify`) from the Axios response interceptor's auto-refresh logic. This ensures actual authentication failures (e.g. incorrect credentials) display correctly to the user instead of triggering a token refresh failure.
+  - Adjusted the backend `authenticateJWT` middleware to return a `401 Unauthorized` status code instead of a `403 Forbidden` status code on expired/invalid access tokens, allowing the client-side interceptor to correctly catch expiration and perform session refreshes.
+
 ### Added
 - **Phase 2.2 / 2.3: User Profile & Settings Complete**:
   - Backend S3/Cloudinary storage and local upload fallback service using Multer and Sharp.

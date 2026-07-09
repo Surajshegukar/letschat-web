@@ -7,6 +7,8 @@ export interface StatusStory {
   fontFamily?: string; // Tailwind font class (e.g. font-serif)
   timestamp: string; // e.g. "Today, 10:45 AM"
   caption?: string; // Text caption for images
+  viewed?: boolean;
+  viewedBy?: { userId: string; viewedAt: string }[];
 }
 
 export interface UserStatus {

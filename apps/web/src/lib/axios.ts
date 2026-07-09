@@ -50,8 +50,15 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // If request returned 401 and has not been retried yet
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthRoute = originalRequest.url && (
+      originalRequest.url.includes("/auth/login") ||
+      originalRequest.url.includes("/auth/refresh") ||
+      originalRequest.url.includes("/auth/register") ||
+      originalRequest.url.includes("/auth/verify")
+    );
+
+    // If request returned 401, has not been retried yet, and is not an auth route
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthRoute) {
       // If we are already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

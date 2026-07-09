@@ -516,11 +516,11 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Install: `ioredis`, `@socket.io/redis-adapter`
-- [ ] Create `apps/api/src/config/redis.ts`
+- [x] Install: `ioredis`, `@socket.io/redis-adapter`
+- [x] Create `apps/api/src/config/redis.ts`
   - Create Redis client from `REDIS_URL` env variable
   - Export client for use across services
-- [ ] Update `apps/api/src/sockets/handler.ts` — complete rewrite:
+- [x] Update `apps/api/src/sockets/handler.ts` — complete rewrite:
   - **Auth middleware**: verify JWT from `socket.handshake.auth.token`
   - **On connection**:
     1. Mark user online in Redis: `SADD online_users {userId}`
@@ -534,14 +534,14 @@ graph LR
     2. Check if any sockets remain: `HLEN user_sockets:{userId}`
     3. If zero: `SREM online_users {userId}`, update MongoDB `isOnline = false, lastSeen = now`
     4. Broadcast `user_offline` to contacts
-- [ ] Create `apps/api/src/sockets/events/` directory:
+- [x] Create `apps/api/src/sockets/events/` directory (unified inside `handler.ts` for consistency):
   - `message.events.ts` — handle `send_message`, `message_delivered`, `message_read`
   - `typing.events.ts` — handle `typing_start`, `typing_stop`
   - `call.events.ts` — handle call signaling (placeholder for Phase 4)
-- [ ] Update `apps/api/src/server.ts`:
+- [x] Update `apps/api/src/server.ts`:
   - Attach Redis adapter to Socket.IO
   - `io.adapter(createAdapter(pubClient, subClient))`
-- [ ] Add `apps/api/src/services/socket.service.ts`:
+- [x] Add `apps/api/src/services/socket.service.ts`:
   - `emitToConversation(conversationId, event, data)` — `io.to(\`conv:${convId}\`).emit(event, data)`
   - `emitToUser(userId, event, data)` — `io.to(\`user:${userId}\`).emit(event, data)`
   - `isUserOnline(userId)` — `SISMEMBER online_users {userId}`
@@ -554,7 +554,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] In `apps/api/src/sockets/events/message.events.ts`:
+- [x] In `apps/api/src/sockets/events/message.events.ts` (implemented in `handler.ts`):
   - `send_message` handler:
     1. Validate message data
     2. Call `messageService.sendMessage()` — saves to DB
@@ -576,7 +576,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] In `apps/api/src/sockets/events/typing.events.ts`:
+- [x] In `apps/api/src/sockets/events/typing.events.ts` (implemented in `handler.ts`):
   - `typing_start`:
     1. Set Redis key `typing:{convId}:{userId}` with TTL 5 seconds
     2. Emit `typing_indicator` to conversation room (excluding sender)
@@ -592,44 +592,44 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Update `apps/web/src/lib/socket.ts` (new file):
+- [x] Update `apps/web/src/lib/socket.ts` (new file):
   - Create Socket.IO client instance (not connected yet)
   - Export `connectSocket(token)`, `disconnectSocket()`, `getSocket()`
-- [ ] Update `apps/web/src/providers/socket-provider.tsx`:
+- [x] Update `apps/web/src/providers/socket-provider.tsx`:
   - Remove the commented-out code
   - On auth state change (user logs in): call `connectSocket(accessToken)`
   - On logout: call `disconnectSocket()`
   - Pass socket instance via context
   - Track `isConnected` state
   - Show connection status indicator in sidebar
-- [ ] Create `apps/web/src/hooks/socket/use-socket-messages.ts`:
+- [x] Create `apps/web/src/hooks/socket/use-socket-messages.ts` (integrated in `use-socket-events.ts`):
   - Listen for `new_message` event
   - On receive: update React Query cache — `queryClient.setQueryData(['messages', convId], ...)` to append message
   - Also update conversations list cache (update lastMessage)
   - Emit `message_delivered` when message arrives while conversation is NOT active
   - Emit `message_read` when message arrives while conversation IS active
-- [ ] Create `apps/web/src/hooks/socket/use-typing.ts`:
+- [x] Create `apps/web/src/hooks/socket/use-typing.ts` (integrated in `use-socket-events.ts` and `useChatWindow.ts`):
   - `startTyping(conversationId)` — emit `typing_start`, debounced
   - `stopTyping(conversationId)` — emit `typing_stop`
   - Listen for `typing_indicator` / `typing_stopped` events
   - Store typing state in `realtime-store.ts`
-- [ ] Create `apps/web/src/hooks/socket/use-presence.ts`:
+- [x] Create `apps/web/src/hooks/socket/use-presence.ts` (integrated in `use-socket-events.ts`):
   - Listen for `user_online` / `user_offline` events
   - Maintain online users set in `realtime-store.ts`
   - Provide `isOnline(userId)` helper
-- [ ] Create `apps/web/src/store/realtime-store.ts`:
+- [x] Create `apps/web/src/store/realtime-store.ts`:
   - `onlineUsers: Set<string>` — user IDs currently online
   - `typingUsers: Map<string, string[]>` — conversationId → list of typing usernames
   - Actions: `setUserOnline`, `setUserOffline`, `setTyping`, `clearTyping`
-- [ ] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
+- [x] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
   - On input change: call `startTyping(conversationId)` (debounced)
   - On blur or send: call `stopTyping(conversationId)`
-- [ ] Create `apps/web/src/components/chat-window/TypingIndicator.tsx`:
+- [x] Create `apps/web/src/components/chat-window/TypingIndicator.tsx` (rendered dynamically in `MessageFeed.tsx`):
   - Read typing users for current conversation from realtime-store
   - Show animated "User is typing..." with bouncing dots
-- [ ] Update `apps/web/src/components/chat-window/MessageBubble.tsx`:
+- [x] Update `apps/web/src/components/chat-window/MessageBubble.tsx`:
   - Show delivery status: ⏳ sending → ✓ sent → ✓✓ delivered → 🔵✓✓ read
-- [ ] Update `apps/web/src/components/chat-list/ChatRoomItem.tsx`:
+- [x] Update `apps/web/src/components/chat-list/ChatRoomItem.tsx`:
   - Show online indicator (green dot) from presence store
   - Show typing indicator if someone is typing in this conversation
 
@@ -645,12 +645,12 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/routes/upload.routes.ts`:
+- [x] Create `apps/api/src/routes/upload.routes.ts` (nested in `conversation.routes.ts` as `/:conversationId/attachments`):
   - `POST /api/upload` → `authenticateJWT` → multer (multiple files, 25MB limit) → `uploadController.upload`
-- [ ] Create `apps/api/src/controllers/upload.controller.ts`:
+- [x] Create `apps/api/src/controllers/upload.controller.ts` (integrated inside `message.controller.ts` as `uploadAttachments`):
   - Process each file through `uploadService`
   - Return array of `{ url, thumbnailUrl, filename, mimeType, size, width?, height?, duration? }`
-- [ ] Update message creation to accept `attachments[]` array with S3 URLs
+- [x] Update message creation to accept `attachments[]` array with S3 URLs
 
 **Verify**: Upload an image via Postman → receive S3 URL → send message with attachment URL → verify message renders with image.
 
@@ -660,19 +660,19 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Create `apps/web/src/services/upload-service.ts`
+- [x] Create `apps/web/src/services/upload-service.ts` (integrated inside `conversation-service.ts` as `uploadAttachments`):
   - `uploadFiles(files: File[])` → `POST /api/upload` with `FormData`, track upload progress
-- [ ] Create `apps/web/src/hooks/ui/use-media-upload.ts`
+- [x] Create `apps/web/src/hooks/ui/use-media-upload.ts` (integrated inside `use-message-input.ts` and `useChatWindow.ts`):
   - Handle file selection (drag-drop or file picker)
   - Preview before send (local `URL.createObjectURL()`)
   - Upload progress tracking
   - Return `{ selectFiles, previews, uploadProgress, upload, cancel }`
-- [ ] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
+- [x] Update `apps/web/src/components/chat-window/MessageInput.tsx`:
   - Add attachment button → opens file picker
   - Show file preview bar above input
   - On send: first upload files → get URLs → then send message with attachment URLs
   - Show upload progress bar
-- [ ] Update `apps/web/src/components/chat-window/MessageBubble.tsx`:
+- [x] Update `apps/web/src/components/chat-window/MessageBubble.tsx`:
   - Render image attachments with lightbox preview
   - Render document attachments with download link + file icon
   - Render audio attachments with the existing `AudioPlayBubble` component
@@ -690,7 +690,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Add to `apps/api/src/services/conversation.service.ts`:
+- [x] Add to `apps/api/src/services/conversation.service.ts`:
   - `addParticipants(conversationId, userId, participantIds)`:
     1. Verify requester is admin
     2. Add participants with `role: 'member'`
@@ -705,11 +705,11 @@ graph LR
     2. Update conversation
     3. System message: "User X changed the group name to ..."
   - `promoteToAdmin(conversationId, adminId, targetUserId)`
-- [ ] Add routes:
+- [x] Add routes:
   - `POST /api/conversations/:id/participants` → add members
   - `DELETE /api/conversations/:id/participants/:userId` → remove/leave
   - `PATCH /api/conversations/:id` → update group info
-- [ ] Handle system messages:
+- [x] Handle system messages:
   - Create `apps/api/src/utils/system-messages.ts`
   - Functions to generate system message content for group events
 
@@ -721,17 +721,17 @@ graph LR
 
 - [ ] Create "New Group" flow:
   - Multi-select user search → set group name → create
-- [ ] Update chat header for groups:
+- [x] Update chat header for groups:
   - Show member count
   - Show group avatar + name
   - "Group Info" button → opens details panel
-- [ ] Update details panel for groups:
+- [x] Update details panel for groups:
   - Show all members with roles (admin badge)
   - "Add Members" button (admin only)
   - "Remove" button next to members (admin only)
   - "Leave Group" button
   - Edit group name/avatar (admin only)
-- [ ] Render system messages:
+- [x] Render system messages:
   - Different bubble style for "User X added User Y", "User X left", etc.
   - Centered, no sender info, muted color
 
@@ -747,7 +747,7 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Add to `apps/api/src/services/message.service.ts`:
+- [x] Add to `apps/api/src/services/message.service.ts`:
   - `editMessage(messageId, userId, newContent)`:
     1. Verify sender owns the message
     2. Update content, set `isEdited = true`
@@ -763,12 +763,12 @@ graph LR
   - `pinMessage(conversationId, messageId, userId)`:
     1. Add/remove messageId from conversation's `pinnedMessages[]`
     2. Emit `conversation_updated`
-- [ ] Add routes:
+- [x] Add routes:
   - `PATCH /api/messages/:id` → edit message
   - `DELETE /api/messages/:id` → delete message
   - `POST /api/messages/:id/reactions` → `{ emoji }`
   - `POST /api/conversations/:id/messages/:msgId/pin`
-- [ ] Add Socket.IO events:
+- [x] Add Socket.IO events:
   - `message_updated`, `message_deleted`, `message_reaction` — emitted to conversation room
 
 ---
@@ -777,7 +777,7 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Add long-press / right-click context menu on messages:
+- [x] Add long-press / right-click context menu on messages:
   - **Reply** → set reply-to state → show reply preview bar in input
   - **Edit** (own messages only) → inline edit mode
   - **Delete** (own messages only) → confirmation → soft delete → show "This message was deleted"
@@ -785,15 +785,15 @@ graph LR
   - **Pin** → pin/unpin (admin in groups)
   - **Forward** → open conversation picker → send to selected
   - **Copy** → copy text to clipboard
-- [ ] Create `apps/web/src/components/chat-window/ReplyPreview.tsx`:
+- [x] Create `apps/web/src/components/chat-window/ReplyPreview.tsx`:
   - Shows above input: "Replying to User: message preview" with close button
-- [ ] Update `MessageBubble.tsx`:
+- [x] Update `MessageBubble.tsx`:
   - Show replied-to message as a nested quote block
   - Show "edited" label for edited messages
   - Show "This message was deleted" for deleted messages
   - Show emoji reaction chips below message
   - Show "📌 Pinned" indicator
-- [ ] Listen for Socket.IO events:
+- [x] Listen for Socket.IO events:
   - `message_updated` → update message in React Query cache
   - `message_deleted` → update message in cache (show deleted state)
   - `message_reaction` → update reactions in cache
@@ -885,11 +885,11 @@ graph LR
 
 **Backend tasks:**
 
-- [ ] Create `apps/api/src/models/Status.ts`
+- [x] Create `apps/api/src/models/Status.ts`
   - Schema with `userId`, `stories[]` (type, content, backgroundColor, fontFamily, caption, viewedBy[], createdAt, expiresAt)
   - TTL index on `stories.expiresAt` for auto-cleanup
-- [ ] Create `apps/api/src/repositories/status.repository.ts`
-- [ ] Create `apps/api/src/services/status.service.ts`:
+- [x] Create `apps/api/src/repositories/status.repository.ts`
+- [x] Create `apps/api/src/services/status.service.ts`:
   - `publishStatus(userId, storyData)`:
     1. If text: save content + styling
     2. If image: upload via uploadService → save URL
@@ -899,7 +899,7 @@ graph LR
   - `getContactStatuses(userId)` — get statuses of user's contacts (people they've chatted with)
   - `viewStory(storyId, viewerId)` — add viewer to `viewedBy[]`
   - `deleteStory(storyId, userId)` — remove story from array
-- [ ] Create routes:
+- [x] Create routes:
   - `GET /api/statuses` → list contacts' statuses
   - `POST /api/statuses` → publish (multipart for images)
   - `POST /api/statuses/:storyId/view` → mark viewed
@@ -911,11 +911,11 @@ graph LR
 
 **Frontend tasks:**
 
-- [ ] Update `apps/web/src/store/status-store.ts` — remove mock data, connect to API
-- [ ] Update status components to fetch from `useStatuses()` query
-- [ ] Connect status creator to real upload + publish flow
-- [ ] Connect status viewer to mark-as-viewed API
-- [ ] Add Socket.IO listener for `status_update` — invalidate statuses query
+- [x] Update `apps/web/src/store/status-store.ts` — remove mock data, connect to API
+- [x] Update status components to fetch from `useStatuses()` query
+- [x] Connect status creator to real upload + publish flow
+- [x] Connect status viewer to mark-as-viewed API
+- [x] Add Socket.IO listener for `status_update` — invalidate statuses query
 
 ---
 

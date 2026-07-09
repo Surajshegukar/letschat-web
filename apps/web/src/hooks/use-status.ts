@@ -1,22 +1,41 @@
 import { useState, useMemo } from "react";
 import { UserStatus } from "@/types/status";
 import { useStatusStore } from "@/store/status-store";
+import { useStatuses, usePublishStatus, useViewStory } from "@/hooks/api/use-status";
+import { useAuthStore } from "@/store/auth-store";
+
+const DEFAULT_MY_STATUS = (user: any): UserStatus => ({
+  id: "me",
+  userId: user?.id || "me",
+  userName: user?.displayName || user?.username || "John Doe",
+  userAvatar: user?.avatar || "",
+  stories: [],
+  lastUpdated: "Never",
+  hasUnread: false,
+});
 
 export function useStatus() {
-  const statuses = useStatusStore((state) => state.statuses);
-  const myStatus = useStatusStore((state) => state.myStatus);
+  const currentUser = useAuthStore((state) => state.user);
+  
+  // React Query queries and mutations
+  const { data: statusesData } = useStatuses();
+  const publishMutation = usePublishStatus();
+  const viewStoryMutation = useViewStory();
+
+  const statuses = statusesData?.statuses || [];
+  const myStatus = statusesData?.myStatus || DEFAULT_MY_STATUS(currentUser);
+
+  // UI state from Zustand store
   const activeUserId = useStatusStore((state) => state.activeUserId);
   const setActiveUserId = useStatusStore((state) => state.setActiveUserId);
-  const markRead = useStatusStore((state) => state.markRead);
-  const publishStatus = useStatusStore((state) => state.publishStatus);
 
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [defaultCreatorType, setDefaultCreatorType] = useState<"text" | "image">("text");
 
   const activeUserStatus = useMemo(() => {
-    if (activeUserId === "me") return myStatus;
+    if (activeUserId === "me" || activeUserId === currentUser?.id) return myStatus;
     return statuses.find((s) => s.userId === activeUserId) || null;
-  }, [activeUserId, statuses, myStatus]);
+  }, [activeUserId, statuses, myStatus, currentUser]);
 
   const viewableStatuses = useMemo(() => {
     const list: UserStatus[] = [];
@@ -58,7 +77,17 @@ export function useStatus() {
   };
 
   const handleMarkRead = (userId: string) => {
-    markRead(userId);
+    // If the viewed status is "me", we don't mark viewed
+    if (userId === "me" || userId === currentUser?.id) return;
+    
+    const status = statuses.find((s) => s.userId === userId);
+    if (!status) return;
+
+    status.stories.forEach((story) => {
+      if (!story.viewed) {
+        viewStoryMutation.mutate(story.id);
+      }
+    });
   };
 
   const handlePublishStatus = (newStoryData: {
@@ -68,7 +97,15 @@ export function useStatus() {
     fontFamily?: string;
     caption?: string;
   }) => {
-    publishStatus(newStoryData);
+    publishMutation.mutate({
+      storyData: {
+        type: newStoryData.type,
+        content: newStoryData.content,
+        backgroundColor: newStoryData.backgroundColor,
+        fontFamily: newStoryData.fontFamily,
+        caption: newStoryData.caption,
+      },
+    });
   };
 
   const triggerCreateText = () => {
