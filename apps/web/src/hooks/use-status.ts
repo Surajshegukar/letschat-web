@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { UserStatus } from "@/types/status";
 import { useStatusStore } from "@/store/status-store";
-import { useStatuses, usePublishStatus, useViewStory } from "@/hooks/api/use-status";
+import { useStatuses, usePublishStatus, useViewStory, useReactStory, useReplyToStory } from "@/hooks/api/use-status";
 import { useAuthStore } from "@/store/auth-store";
 
 const DEFAULT_MY_STATUS = (user: any): UserStatus => ({
@@ -21,6 +21,8 @@ export function useStatus() {
   const { data: statusesData } = useStatuses();
   const publishMutation = usePublishStatus();
   const viewStoryMutation = useViewStory();
+  const reactStoryMutation = useReactStory();
+  const replyToStoryMutation = useReplyToStory();
 
   const statuses = statusesData?.statuses || [];
   const myStatus = statusesData?.myStatus || DEFAULT_MY_STATUS(currentUser);
@@ -90,13 +92,16 @@ export function useStatus() {
     });
   };
 
-  const handlePublishStatus = (newStoryData: {
-    type: "text" | "image";
-    content: string;
-    backgroundColor?: string;
-    fontFamily?: string;
-    caption?: string;
-  }) => {
+  const handlePublishStatus = (
+    newStoryData: {
+      type: "text" | "image" | "video";
+      content: string;
+      backgroundColor?: string;
+      fontFamily?: string;
+      caption?: string;
+    },
+    file?: File
+  ) => {
     publishMutation.mutate({
       storyData: {
         type: newStoryData.type,
@@ -105,6 +110,7 @@ export function useStatus() {
         fontFamily: newStoryData.fontFamily,
         caption: newStoryData.caption,
       },
+      file,
     });
   };
 
@@ -134,6 +140,8 @@ export function useStatus() {
     handlePublishStatus,
     triggerCreateText,
     triggerCreateImage,
+    reactStory: reactStoryMutation.mutate,
+    replyToStory: replyToStoryMutation.mutate,
   };
 }
 

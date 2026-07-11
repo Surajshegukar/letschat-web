@@ -434,6 +434,8 @@ export function useSocketEvents() {
     socket.on("typing_indicator", onTypingIndicator);
     socket.on("typing_stopped", onTypingStopped);
     socket.on("status_update", onStatusUpdate);
+    socket.on("status_viewed", onStatusUpdate);
+    socket.on("status_reacted", onStatusUpdate);
 
     return () => {
       socket.off("initial_online_users", onInitialOnlineUsers);
@@ -449,6 +451,8 @@ export function useSocketEvents() {
       socket.off("typing_indicator", onTypingIndicator);
       socket.off("typing_stopped", onTypingStopped);
       socket.off("status_update", onStatusUpdate);
+      socket.off("status_viewed", onStatusUpdate);
+      socket.off("status_reacted", onStatusUpdate);
     };
   }, [socket, isConnected, queryClient, setUserOnline, setUserOffline, setOnlineUsers, setTyping, removeTyping, activeRoomId]);
 }

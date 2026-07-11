@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Type, Image as ImageIcon } from "lucide-react";
+import { X, Type, Image as ImageIcon, Video } from "lucide-react";
 import { Button } from "@/components/ui";
 import { StatusTextCreator } from "./StatusTextCreator";
 import { StatusImageCreator } from "./StatusImageCreator";
@@ -9,12 +9,12 @@ interface StatusCreatorModalProps {
   isOpen: boolean;
   onClose: () => void;
   onPublish: (story: {
-    type: "text" | "image";
+    type: "text" | "image" | "video";
     content: string;
     backgroundColor?: string;
     fontFamily?: string;
     caption?: string;
-  }) => void;
+  }, file?: File) => void;
 }
 
 const GRADIENTS = [
@@ -62,15 +62,17 @@ export function StatusCreatorModal({
   onClose,
   onPublish,
 }: StatusCreatorModalProps) {
-  const [type, setType] = useState<"text" | "image">("text");
+  const [type, setType] = useState<"text" | "image" | "video">("text");
   
   // Text status state
   const [text, setText] = useState("");
   const [gradientIndex, setGradientIndex] = useState(0);
   const [fontIndex, setFontIndex] = useState(0);
 
-  // Image status state
+  // Media (Image/Video) status state
   const [imageUrl, setImageUrl] = useState("");
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState("");
   const [caption, setCaption] = useState("");
   const [activePreset, setActivePreset] = useState<number | null>(null);
 
@@ -82,6 +84,11 @@ export function StatusCreatorModal({
     setGradientIndex(0);
     setFontIndex(0);
     setImageUrl("");
+    if (mediaPreviewUrl) {
+      URL.revokeObjectURL(mediaPreviewUrl);
+    }
+    setMediaFile(null);
+    setMediaPreviewUrl("");
     setCaption("");
     setActivePreset(null);
     setType("text");
@@ -102,20 +109,26 @@ export function StatusCreatorModal({
 
   const handleSelectPreset = (url: string, index: number) => {
     setImageUrl(url);
+    if (mediaPreviewUrl) {
+      URL.revokeObjectURL(mediaPreviewUrl);
+    }
+    setMediaFile(null);
+    setMediaPreviewUrl("");
     setActivePreset(index);
   };
 
   const handlePublish = () => {
     if (type === "text" && !text.trim()) return;
-    if (type === "image" && !imageUrl.trim()) return;
+    if (type === "image" && !imageUrl.trim() && !mediaFile) return;
+    if (type === "video" && !mediaFile) return;
 
     onPublish({
       type,
-      content: type === "text" ? text : imageUrl,
+      content: type === "text" ? text : (mediaFile ? mediaPreviewUrl : imageUrl),
       backgroundColor: type === "text" ? activeGradient : undefined,
       fontFamily: type === "text" ? activeFont.class : undefined,
-      caption: type === "image" ? caption : undefined,
-    });
+      caption: (type === "image" || type === "video") ? caption : undefined,
+    }, mediaFile || undefined);
     
     handleClose();
   };
@@ -175,6 +188,17 @@ export function StatusCreatorModal({
                 <ImageIcon className="h-4 w-4" />
                 <span>Image Status</span>
               </button>
+              <button
+                onClick={() => setType("video")}
+                className={`flex-1 py-2.5 rounded-xl text-xs font-semibold flex items-center justify-center gap-2 border transition ${
+                  type === "video"
+                    ? "bg-[#19E68C]/15 border-emerald-500/30 text-emerald-600 dark:text-[#19E68C]"
+                    : "bg-zinc-50 dark:bg-zinc-950/40 border-transparent text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100"
+                }`}
+              >
+                <Video className="h-4 w-4" />
+                <span>Video Status</span>
+              </button>
             </div>
 
             {/* Content Body */}
@@ -198,6 +222,11 @@ export function StatusCreatorModal({
                   setActivePreset={setActivePreset}
                   presetImages={PRESET_IMAGES}
                   handleSelectPreset={handleSelectPreset}
+                  mediaFile={mediaFile}
+                  setMediaFile={setMediaFile}
+                  mediaPreviewUrl={mediaPreviewUrl}
+                  setMediaPreviewUrl={setMediaPreviewUrl}
+                  type={type}
                 />
               )}
             </div>
@@ -210,7 +239,13 @@ export function StatusCreatorModal({
               <Button
                 variant="primary"
                 onClick={handlePublish}
-                disabled={type === "text" ? !text.trim() : !imageUrl.trim()}
+                disabled={
+                  type === "text"
+                    ? !text.trim()
+                    : type === "image"
+                    ? !imageUrl.trim() && !mediaFile
+                    : !mediaFile
+                }
                 className="h-11 px-6 rounded-xl font-bold"
               >
                 Publish Status

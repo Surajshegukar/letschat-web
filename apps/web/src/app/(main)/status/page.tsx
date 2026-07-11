@@ -22,6 +22,8 @@ export default function StatusPage() {
     handlePublishStatus,
     triggerCreateText,
     triggerCreateImage,
+    reactStory,
+    replyToStory,
   } = useStatus();
 
   return (
@@ -44,6 +46,8 @@ export default function StatusPage() {
           onNextUserStatus={handleNextUserStatus}
           onPrevUserStatus={handlePrevUserStatus}
           onMarkRead={handleMarkRead}
+          onReactStory={(storyId, emoji) => reactStory({ storyId, emoji })}
+          onReplyToStory={(storyId, message) => replyToStory({ storyId, message })}
         />
       </div>
 

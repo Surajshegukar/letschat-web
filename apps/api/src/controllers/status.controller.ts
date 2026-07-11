@@ -102,6 +102,68 @@ export class StatusController {
       next(error);
     }
   };
+
+  /**
+   * React to a status story with an emoji.
+   */
+  reactStory = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { storyId } = req.params;
+      const { emoji } = req.body;
+      const userId = req.user!.id;
+
+      if (!emoji) {
+        const err: any = new Error("Emoji is required");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      await statusService.reactStory(storyId!, userId, emoji);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: null,
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Reply to a status story (sends DM to publisher).
+   */
+  replyToStatus = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { storyId } = req.params;
+      const { message } = req.body;
+      const userId = req.user!.id;
+
+      if (!message) {
+        const err: any = new Error("Message text is required");
+        err.statusCode = 400;
+        throw err;
+      }
+
+      const chatMessage = await statusService.replyToStatus(userId, storyId!, message);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { message: chatMessage },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const statusController = new StatusController();

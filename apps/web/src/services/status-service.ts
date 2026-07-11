@@ -13,11 +13,11 @@ export const statusService = {
 
   /**
    * Publish a new status story.
-   * Supports text statuses or image statuses via FormData.
+   * Supports text statuses, image statuses, or video statuses via FormData.
    */
   async publishStatus(
     storyData: {
-      type: "text" | "image";
+      type: "text" | "image" | "video";
       content?: string;
       backgroundColor?: string;
       textColor?: string;
@@ -26,10 +26,10 @@ export const statusService = {
     },
     file?: File
   ): Promise<StatusStory> {
-    if (storyData.type === "image" && file) {
+    if ((storyData.type === "image" || storyData.type === "video") && file) {
       const formData = new FormData();
-      formData.append("image", file);
-      formData.append("type", "image");
+      formData.append("media", file);
+      formData.append("type", storyData.type);
       if (storyData.caption) {
         formData.append("caption", storyData.caption);
       }
@@ -50,6 +50,21 @@ export const statusService = {
    */
   async viewStory(storyId: string): Promise<void> {
     await api.post(`/statuses/${storyId}/view`);
+  },
+
+  /**
+   * React to a specific status story with an emoji.
+   */
+  async reactStory(storyId: string, emoji: string): Promise<void> {
+    await api.post(`/statuses/${storyId}/react`, { emoji });
+  },
+
+  /**
+   * Reply to a specific status story via DM.
+   */
+  async replyToStory(storyId: string, message: string): Promise<unknown> {
+    const response = await api.post(`/statuses/${storyId}/reply`, { message });
+    return response.data.data.message;
   },
 
   /**

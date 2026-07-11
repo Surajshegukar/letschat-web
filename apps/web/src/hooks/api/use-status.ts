@@ -25,7 +25,7 @@ export function usePublishStatus() {
       file,
     }: {
       storyData: {
-        type: "text" | "image";
+        type: "text" | "image" | "video";
         content?: string;
         backgroundColor?: string;
         textColor?: string;
@@ -59,6 +59,46 @@ export function useViewStory() {
     },
     onError: (error: any) => {
       console.error("Failed to mark story as viewed", error);
+    },
+  });
+}
+
+/**
+ * Hook to react to a status story.
+ */
+export function useReactStory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ storyId, emoji }: { storyId: string; emoji: string }) =>
+      statusService.reactStory(storyId, emoji),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["statuses"] });
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (error: any) => {
+      console.error("Failed to react to status story", error);
+    },
+  });
+}
+
+/**
+ * Hook to reply to a status story.
+ */
+export function useReplyToStory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ storyId, message }: { storyId: string; message: string }) =>
+      statusService.replyToStory(storyId, message),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      toast.success("Reply sent!");
+    },
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    onError: (error: any) => {
+      const message = error.response?.data?.message || "Failed to send reply";
+      toast.error(message);
     },
   });
 }

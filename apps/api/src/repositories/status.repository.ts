@@ -27,6 +27,8 @@ export const statusRepository = {
       expiresAt: { $gt: new Date() },
     })
       .populate("userId", "username displayName avatar isOnline lastSeen")
+      .populate("viewedBy.userId", "username displayName avatar")
+      .populate("reactions.userId", "username displayName avatar")
       .sort({ createdAt: 1 })
       .exec();
   },
@@ -41,6 +43,8 @@ export const statusRepository = {
       expiresAt: { $gt: new Date() },
     })
       .populate("userId", "username displayName avatar isOnline lastSeen")
+      .populate("viewedBy.userId", "username displayName avatar")
+      .populate("reactions.userId", "username displayName avatar")
       .sort({ createdAt: 1 })
       .exec();
   },
@@ -67,6 +71,37 @@ export const statusRepository = {
       },
       { new: true }
     ).exec();
+  },
+
+  /**
+   * Add or update a reaction to a status story.
+   */
+  async addReaction(
+    statusId: string,
+    userId: string,
+    emoji: string
+  ): Promise<IStatus | null> {
+    const status = await Status.findById(statusId);
+    if (!status) return null;
+
+    const existingReactionIndex = status.reactions.findIndex(
+      (r) => r.userId.toString() === userId
+    );
+
+    if (existingReactionIndex !== -1) {
+      // Update existing reaction
+      status.reactions[existingReactionIndex].emoji = emoji;
+      status.reactions[existingReactionIndex].reactedAt = new Date();
+    } else {
+      // Add new reaction
+      status.reactions.push({
+        userId: new mongoose.Types.ObjectId(userId),
+        emoji,
+        reactedAt: new Date(),
+      });
+    }
+
+    return status.save();
   },
 
   /**

@@ -5,15 +5,22 @@ export interface IStoryView {
   viewedAt: Date;
 }
 
+export interface IStatusReaction {
+  userId: mongoose.Types.ObjectId;
+  emoji: string;
+  reactedAt: Date;
+}
+
 export interface IStatus extends Document {
   userId: mongoose.Types.ObjectId;
-  type: "text" | "image";
-  content: string; // The text content or S3/local image URL
+  type: "text" | "image" | "video";
+  content: string; // The text content or S3/local media URL
   backgroundColor?: string; // CSS background classes (e.g. Tailwind gradient)
   textColor?: string;
   fontFamily?: string;
   caption?: string;
   viewedBy: IStoryView[];
+  reactions: IStatusReaction[];
   createdAt: Date;
   expiresAt: Date; // TTL field
 }
@@ -30,6 +37,22 @@ const StoryViewSchema = new Schema<IStoryView>({
   },
 }, { _id: false });
 
+const StatusReactionSchema = new Schema<IStatusReaction>({
+  userId: {
+    type: Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  emoji: {
+    type: String,
+    required: true,
+  },
+  reactedAt: {
+    type: Date,
+    default: Date.now,
+  },
+}, { _id: false });
+
 const StatusSchema = new Schema<IStatus>({
   userId: {
     type: Schema.Types.ObjectId,
@@ -39,7 +62,7 @@ const StatusSchema = new Schema<IStatus>({
   },
   type: {
     type: String,
-    enum: ["text", "image"],
+    enum: ["text", "image", "video"],
     required: true,
   },
   content: {
@@ -59,6 +82,10 @@ const StatusSchema = new Schema<IStatus>({
     type: String,
   },
   viewedBy: [StoryViewSchema],
+  reactions: {
+    type: [StatusReactionSchema],
+    default: [],
+  },
   createdAt: {
     type: Date,
     default: Date.now,

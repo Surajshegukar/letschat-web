@@ -10,17 +10,23 @@ const router = Router();
 // Retrieve all active statuses (self + contacts)
 router.get("/", authenticateJWT, statusController.getStatuses);
 
-// Publish a new status story (can accept multipart for images)
+// Publish a new status story (can accept multipart for images/videos)
 router.post(
   "/",
   authenticateJWT,
-  upload.single("image"),
+  upload.single("media"),
   validate(publishStatusSchema),
   statusController.publishStatus
 );
 
 // Mark a specific story as viewed
 router.post("/:storyId/view", authenticateJWT, statusController.viewStory);
+
+// React to a specific story
+router.post("/:storyId/react", authenticateJWT, statusController.reactStory);
+
+// Reply to a specific story (sends DM)
+router.post("/:storyId/reply", authenticateJWT, statusController.replyToStatus);
 
 // Delete a specific story owned by the user
 router.delete("/:storyId", authenticateJWT, statusController.deleteStory);

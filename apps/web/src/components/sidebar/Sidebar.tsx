@@ -44,8 +44,8 @@ export function Sidebar() {
   const navItems = [
     { icon: MessageSquare, label: "Chats", count: 12, href: "/chat" },
     { icon: CircleDashed, label: "Status", href: "/status" },
-    { icon: Radio, label: "Channels", href: "/channels" },
-    { icon: Users, label: "Communities", href: "/communities" },
+    // { icon: Radio, label: "Channels", href: "/channels" },
+    // { icon: Users, label: "Communities", href: "/communities" },
     { icon: Phone, label: "Calls", count: 2, href: "/calls" },
   ];
 

@@ -38,7 +38,7 @@ export class StatusService {
   async publishStatus(
     userId: string,
     storyData: {
-      type: "text" | "image";
+      type: "text" | "image" | "video";
       content?: string;
       backgroundColor?: string;
       textColor?: string;
@@ -50,8 +50,8 @@ export class StatusService {
   ): Promise<any> {
     let content = storyData.content || "";
 
-    if (storyData.type === "image" && file && hostUrl) {
-      // Upload image and get URL
+    if ((storyData.type === "image" || storyData.type === "video") && file && hostUrl) {
+      // Upload media and get URL
       content = await uploadService.uploadMessageAttachment(file, hostUrl);
     }
 
@@ -110,6 +110,7 @@ export class StatusService {
       timestamp: formatStatusTimestamp(statusDoc.createdAt),
       viewed: false,
       viewedBy: [],
+      reactions: [],
     };
   }
 
@@ -158,7 +159,10 @@ export class StatusService {
 
       const formattedStories = stories.map((story) => {
         const hasViewed = story.viewedBy.some(
-          (view: any) => view.userId.toString() === userId
+          (view: any) => {
+            const vId = view.userId?._id || view.userId;
+            return vId ? vId.toString() === userId : false;
+          }
         );
         return {
           id: story._id.toString(),
@@ -170,10 +174,25 @@ export class StatusService {
           caption: story.caption,
           timestamp: formatStatusTimestamp(story.createdAt),
           viewed: hasViewed,
-          viewedBy: story.viewedBy.map((view: any) => ({
-            userId: view.userId.toString(),
-            viewedAt: view.viewedAt.toISOString(),
-          })),
+          viewedBy: story.viewedBy.map((view: any) => {
+            const vUser = view.userId;
+            return {
+              userId: vUser?._id ? vUser._id.toString() : view.userId.toString(),
+              userName: vUser?.displayName || vUser?.username || "Unknown",
+              userAvatar: vUser?.avatar || vUser?.avatarUrl || "",
+              viewedAt: view.viewedAt.toISOString(),
+            };
+          }),
+          reactions: (story.reactions || []).map((rx: any) => {
+            const rxUser = rx.userId;
+            return {
+              userId: rxUser?._id ? rxUser._id.toString() : rx.userId.toString(),
+              userName: rxUser?.displayName || rxUser?.username || "Unknown",
+              userAvatar: rxUser?.avatar || rxUser?.avatarUrl || "",
+              emoji: rx.emoji,
+              reactedAt: rx.reactedAt.toISOString(),
+            };
+          }),
         };
       });
 
@@ -191,7 +210,7 @@ export class StatusService {
         id: sUserId,
         userId: sUserId,
         userName: user.displayName || user.username,
-        userAvatar: user.avatar || "",
+        userAvatar: user.avatar || user.avatarUrl || "",
         stories: formattedStories,
         lastUpdated,
         hasUnread,
@@ -221,7 +240,71 @@ export class StatusService {
    * Mark a story as viewed.
    */
   async viewStory(storyId: string, viewerId: string): Promise<void> {
-    await statusRepository.addView(storyId, viewerId);
+    const status = await statusRepository.addView(storyId, viewerId);
+    if (status) {
+      // Notify the publisher
+      const publisherId = status.userId.toString();
+      socketService.emitToUser(publisherId, "status_viewed", {
+        storyId,
+        viewerId,
+      });
+    }
+  }
+
+  /**
+   * Add a reaction to a status story.
+   */
+  async reactStory(storyId: string, userId: string, emoji: string): Promise<void> {
+    const status = await statusRepository.addReaction(storyId, userId, emoji);
+    if (status) {
+      // Notify the publisher
+      const publisherId = status.userId.toString();
+      socketService.emitToUser(publisherId, "status_reacted", {
+        storyId,
+        userId,
+        emoji,
+      });
+    }
+  }
+
+  /**
+   * Reply to a status story via DM.
+   */
+  async replyToStatus(userId: string, storyId: string, replyText: string): Promise<any> {
+    const story = await statusRepository.findById(storyId);
+    if (!story) {
+      const err: any = new Error("Status story not found");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    const publisherId = story.userId.toString();
+    if (publisherId === userId) {
+      const err: any = new Error("Cannot reply to your own status story");
+      err.statusCode = 400;
+      throw err;
+    }
+
+    const { conversationService } = await import("./conversation.service");
+    const { messageService } = await import("./message.service");
+
+    // Fetch or create DM conversation
+    const conversation = await conversationService.createDirectConversation(userId, publisherId);
+
+    // Format the status story context for the message
+    const previewContent = story.type === "text"
+      ? `"${story.content}"`
+      : `[${story.type.charAt(0).toUpperCase() + story.type.slice(1)}]`;
+
+    const messageContent = `Replied to status: ${previewContent}\n\n${replyText}`;
+
+    // Send direct message
+    const message = await messageService.sendMessage(userId, conversation._id.toString(), {
+      type: "text",
+      content: messageContent,
+    });
+
+    return message;
   }
 
   /**
