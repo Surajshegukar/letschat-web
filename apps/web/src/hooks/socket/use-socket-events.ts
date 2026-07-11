@@ -1,10 +1,11 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useQueryClient, InfiniteData } from "@tanstack/react-query";
 import { useSocket } from "@/providers/socket-provider";
 import { useRealtimeStore } from "@/store/realtime-store";
 import { useChatStore } from "@/store/chat-store";
 import { useAuthStore } from "@/store/auth-store";
 import { RawMessage, RawConversation } from "@/utils/chat-helpers";
+import { showForegroundNotification } from "@/utils/push";
 
 interface SocketRawMessage extends RawMessage {
   conversationId?: string;
@@ -189,6 +190,28 @@ export function useSocketEvents() {
         // If this message arrived in the currently open active chat, mark it as read immediately
         if (conversationId === activeRoomId) {
           socket.emit("read_conversation", { conversationId });
+        } else {
+          // ── Foreground notification ──────────────────────────────────────
+          // Fire a browser notification when a message arrives in a
+          // background conversation (not the one the user currently has open)
+          const currentUserId = useAuthStore.getState().user?.id;
+          const rawMsgSenderId =
+            typeof rawMsg.senderId === "object" && rawMsg.senderId !== null
+              ? (rawMsg.senderId as { _id: string })._id
+              : rawMsg.senderId;
+
+          if (rawMsgSenderId !== currentUserId) {
+            const senderName =
+              typeof rawMsg.senderId === "object" && rawMsg.senderId !== null
+                ? (rawMsg.senderId as { displayName?: string; username?: string }).displayName ||
+                  (rawMsg.senderId as { displayName?: string; username?: string }).username ||
+                  "Someone"
+                : "Someone";
+            const body = rawMsg.content || "[Media message]";
+
+            showForegroundNotification(senderName, body, conversationId);
+          }
+          // ────────────────────────────────────────────────────────────────
         }
       }
     };

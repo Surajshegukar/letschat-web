@@ -7,3 +7,5 @@ export { default as Spinner } from "./Spinner";
 export { default as Avatar } from "./Avatar";
 export { default as Badge } from "./Badge";
 export { default as ConfirmDialog } from "./ConfirmDialog";
+export { default as MetricCard } from "./MetricCard";
+export { default as MetricSection } from "./MetricSection";

@@ -232,6 +232,29 @@ export class UserController {
       next(error);
     }
   };
+
+  /**
+   * Save the current user's push token subscription.
+   */
+  savePushToken = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const currentUserId = req.user!.id;
+      const { subscription } = req.body;
+      await userService.savePushToken(currentUserId, subscription);
+
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        message: "Push token registered successfully",
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const userController = new UserController();

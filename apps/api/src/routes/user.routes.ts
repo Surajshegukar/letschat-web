@@ -49,4 +49,7 @@ router.post("/me/unblock/:userId", authenticateJWT, userController.unblockUser);
 // Get blocked users
 router.get("/me/blocked", authenticateJWT, userController.getBlockedUsers);
 
+// Save push token / subscription
+router.post("/me/push-token", authenticateJWT, userController.savePushToken);
+
 export default router;

@@ -1,5 +1,6 @@
-import React from "react";
-import { Volume2, AlertTriangle } from "lucide-react";
+import React, { useState } from "react";
+import { Volume2, AlertTriangle, Bell, BellOff, X } from "lucide-react";
+import { usePushPermission } from "@/hooks/use-push-permission";
 
 interface SettingsNotificationsViewProps {
   soundEnabled: boolean;
@@ -18,8 +19,69 @@ export function SettingsNotificationsView({
   showPreviews,
   setShowPreviews,
 }: SettingsNotificationsViewProps) {
+  const { permission, turnOn, turnOff } = usePushPermission();
+  const [showBanner, setShowBanner] = useState(true);
+
+  const handleTogglePush = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const checked = e.target.checked;
+    if (checked) {
+      await turnOn();
+    } else {
+      await turnOff();
+    }
+  };
+
+  const handleTurnOn = async () => {
+    await turnOn();
+  };
+
   return (
     <div className="p-4 space-y-4 text-left">
+      {/* Dark Green Alert Banner (Mockup style) */}
+      {permission !== "granted" && showBanner && (
+        <div className="flex items-center justify-between bg-[#0d261e] border border-[#133a2e] rounded-2xl px-4 py-3.5 text-[#e4f6ef] transition-all select-none">
+          <div className="flex items-center gap-3">
+            <BellOff className="h-5 w-5 text-[#19E68C] flex-shrink-0" />
+            <span className="text-xs font-semibold">
+              Message notifications are off.{" "}
+              <button
+                onClick={handleTurnOn}
+                className="text-[#19E68C] hover:underline font-bold"
+              >
+                Turn on
+              </button>
+            </span>
+          </div>
+          <button
+            onClick={() => setShowBanner(false)}
+            className="p-1 hover:bg-white/10 rounded-lg text-zinc-400 transition"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Show Notifications Switch Toggle */}
+      <div className="bg-white dark:bg-zinc-950 p-5 border border-zinc-150/40 dark:border-zinc-900 rounded-3xl shadow-sm space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Bell className="h-5 w-5 text-emerald-600 dark:text-[#19E68C]" />
+            <span className="text-sm font-bold text-slate-855 dark:text-zinc-200">
+              Show Push Notifications
+            </span>
+          </div>
+          <input
+            type="checkbox"
+            checked={permission === "granted"}
+            onChange={handleTogglePush}
+            className="h-4.5 w-4.5 rounded border-zinc-350 dark:border-zinc-800 text-emerald-500 focus:ring-[#19E68C] transition"
+          />
+        </div>
+        <p className="text-[10px] text-zinc-455 dark:text-zinc-500 leading-relaxed font-semibold">
+          Enable or disable real-time push alerts on your desktop or mobile device when you are offline.
+        </p>
+      </div>
+
       {/* Alert sounds */}
       <div className="bg-white dark:bg-zinc-950 p-5 border border-zinc-150/40 dark:border-zinc-900 rounded-3xl shadow-sm space-y-3">
         <div className="flex items-center justify-between">

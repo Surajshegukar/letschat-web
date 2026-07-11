@@ -1,6 +1,7 @@
 import { messageRepository } from "@/repositories/message.repository";
 import { conversationRepository } from "@/repositories/conversation.repository";
 import { socketService } from "./socket.service";
+import { pushService } from "./push.service";
 import { Message, IMessage } from "@/models/Message";
 import { User } from "@/models/User";
 import mongoose from "mongoose";
@@ -223,6 +224,30 @@ export class MessageService {
       });
 
       await conversation.save();
+
+      // Trigger background push notifications for offline users
+      const offlineParticipantIds = participantIds
+        .map((id) => id.toString())
+        .filter((idStr) => !onlineUserIds.has(idStr));
+
+      if (offlineParticipantIds.length > 0) {
+        const senderParticipant = conversation.participants.find((p) => p.userId._id.toString() === senderId);
+        const senderUser = senderParticipant?.userId;
+        const senderName = (senderUser as any)?.displayName || (senderUser as any)?.username || "Someone";
+        const senderAvatar = (senderUser as any)?.avatar || "";
+
+        for (const offId of offlineParticipantIds) {
+          pushService.sendNewMessageNotification(
+            offId,
+            senderName,
+            senderAvatar,
+            contentPreview,
+            conversationId,
+            conversation.type as "direct" | "group",
+            conversation.name
+          ).catch(() => {});
+        }
+      }
     }
 
     // 6. Format payload & emit socket events

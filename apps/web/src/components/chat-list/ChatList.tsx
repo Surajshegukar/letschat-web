@@ -11,6 +11,7 @@ import { ChatRoomItem } from "./ChatRoomItem";
 import { ChatRoom } from "@/types/chat";
 import ChatListHeader from "./ChatListHeader";
 import { NewChatList } from "../newchat/NewChatList";
+import { NotificationBanner } from "./NotificationBanner";
 
 interface ChatListProps {
   activeRoomId: string | null;
@@ -131,6 +132,7 @@ export function ChatList({ activeRoomId, onSelectRoom }: ChatListProps) {
         pinnedCount={pinnedCount}
         archiveCount={archiveCount}
       />
+      <NotificationBanner />
 
       <div className="flex-1 overflow-y-auto p-3 space-y-1">
         {isLoading ? (

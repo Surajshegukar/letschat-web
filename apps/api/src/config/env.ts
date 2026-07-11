@@ -41,6 +41,9 @@ const envSchema = z.object({
   AWS_SECRET_ACCESS_KEY: z.string().optional(),
   AWS_REGION: z.string().optional(),
   AWS_S3_BUCKET: z.string().optional(),
+  VAPID_PUBLIC_KEY: z.string().min(1, "VAPID_PUBLIC_KEY is required").default("BPWOGEyappiI3PCNTodV2phDjTgIJffpXnVaSYH8Wmp11pRA8Ep0iUu6LSVrMeoIuI7RRQn94CcTxeqPSrGDvPU"),
+  VAPID_PRIVATE_KEY: z.string().min(1, "VAPID_PRIVATE_KEY is required").default("yh_z17oe85GorcwEDYWFTaoD79tQ78339Ak6-_2SsGk"),
+  VAPID_EMAIL: z.string().default("mailto:support@letschat.com"),
 });
 
 let env: z.infer<typeof envSchema>;

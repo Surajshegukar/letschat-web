@@ -175,6 +175,22 @@ export class UserService {
     }
     return (user.blockedUsers as unknown as IUser[]) || [];
   }
+
+  /**
+   * Save push token / subscription for push notifications.
+   */
+  async savePushToken(userId: string, subscription: any): Promise<void> {
+    const update = subscription 
+      ? { pushToken: JSON.stringify(subscription) }
+      : { $unset: { pushToken: "" } };
+
+    const updatedUser = await userRepository.updateById(userId, update);
+    if (!updatedUser) {
+      const err: any = new Error("User not found");
+      err.statusCode = 404;
+      throw err;
+    }
+  }
 }
 
 export const userService = new UserService();

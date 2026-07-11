@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { ChatList } from "@/components/chat-list/ChatList";
 import { ChatWindow } from "@/components/chat-window/ChatWindow";
 import { useCallStore } from "@/store/call-store";
@@ -15,6 +16,8 @@ import { useSocketEvents } from "@/hooks/socket/use-socket-events";
 export default function ChatPage() {
   useSocketEvents();
 
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const activeRoomId = useChatStore((state) => state.activeRoomId);
   const setActiveRoomId = useChatStore((state) => state.setActiveRoomId);
   const { data: convResponse } = useConversations();
@@ -23,8 +26,19 @@ export default function ChatPage() {
   const [isMediaModalOpen, setIsMediaModalOpen] = useState(false);
   const { startCall } = useCallStore();
 
+  // Auto-open conversation when navigated from a push notification click
+  useEffect(() => {
+    const convId = searchParams.get("conv");
+    if (convId && convId !== activeRoomId) {
+      setActiveRoomId(convId);
+      // Clean up the URL so the conv= param doesn't stay in the address bar
+      router.replace("/chat");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
   const rawConversations = convResponse?.data?.conversations;
-  
+
   const activeRoom = React.useMemo(() => {
     if (!activeRoomId || !currentUserId || !rawConversations) return null;
     const raw = rawConversations.find((c: { _id: string }) => c._id === activeRoomId);

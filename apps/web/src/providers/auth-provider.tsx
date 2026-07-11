@@ -5,6 +5,7 @@ import { useAuthStore } from "@/store/auth-store";
 import { authService } from "@/services/auth-service";
 import { usePathname, useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/BrandLogo";
+import { usePushNotifications } from "@/hooks/use-push-notifications";
 
 interface AuthContextType {
   isChecking: boolean;
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const { registerPush } = usePushNotifications();
 
   // 1. Initial authentication check (Refresh Token exchange) on mount
   useEffect(() => {
@@ -88,7 +90,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => clearInterval(intervalId);
   }, [token, user, setAuth, logout, router]);
 
-  // 3. Route Guard: redirect based on auth status and current path
+  // 3. Register push notifications when authenticated
+  useEffect(() => {
+    if (user && token) {
+      registerPush();
+    }
+  }, [user, token, registerPush]);
+
+  // 4. Route Guard: redirect based on auth status and current path
   useEffect(() => {
     if (isChecking) return;
 
