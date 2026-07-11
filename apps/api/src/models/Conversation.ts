@@ -13,6 +13,7 @@ export interface IParticipant {
   lastDeliveredAt?: Date;
   isDeleted?: boolean;
   clearedAt?: Date;
+  removedAt?: Date;
 }
 
 export interface ILastMessage {
@@ -81,6 +82,9 @@ const participantSchema = new Schema<IParticipant>({
     default: false,
   },
   clearedAt: {
+    type: Date,
+  },
+  removedAt: {
     type: Date,
   },
 });

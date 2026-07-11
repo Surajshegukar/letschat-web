@@ -121,12 +121,21 @@ export function ChatWindow({
 
   const rawConversations = convResponse?.data?.conversations;
 
+  const rawActiveConv = React.useMemo(() => {
+    if (!activeRoomId || !rawConversations) return null;
+    return rawConversations.find((c: { _id: string }) => c._id === activeRoomId);
+  }, [rawConversations, activeRoomId]);
+
   const room = React.useMemo(() => {
-    if (!activeRoomId || !currentUserId || !rawConversations) return null;
-    const raw = rawConversations.find((c: { _id: string }) => c._id === activeRoomId);
-    if (!raw) return null;
-    return formatConversation(raw as unknown as RawConversation, currentUserId);
-  }, [rawConversations, activeRoomId, currentUserId]);
+    if (!rawActiveConv || !currentUserId) return null;
+    return formatConversation(rawActiveConv as unknown as RawConversation, currentUserId);
+  }, [rawActiveConv, currentUserId]);
+
+  const activeMembersCount = React.useMemo(() => {
+    if (!rawActiveConv || rawActiveConv.type !== "group") return 0;
+    const participants = (rawActiveConv as any).participants || [];
+    return participants.filter((p: any) => !p.isDeleted).length;
+  }, [rawActiveConv]);
 
   const typingUsers = useRealtimeStore((state) => {
     if (!activeRoomId) return EMPTY_ARRAY;
@@ -161,6 +170,8 @@ export function ChatWindow({
         avatarUrl={avatarUrl}
         isGroup={isGroup}
         isOnline={isOnline}
+        memberCount={activeMembersCount}
+        isRemoved={!!room?.isRemoved}
         isDetailsOpen={isDetailsOpen}
         onToggleDetails={onToggleDetails}
         onStartAudioCall={onStartAudioCall ? () => onStartAudioCall(roomName, avatarUrl) : undefined}
@@ -212,6 +223,12 @@ export function ChatWindow({
               <Trash2 className="h-4 w-4" /> Delete Selected
             </button>
           </div>
+        </div>
+      ) : room?.isRemoved ? (
+        <div className="p-4.5 md:p-6 bg-zinc-50 dark:bg-zinc-900/60 border-t border-zinc-200/60 dark:border-zinc-800/50 flex items-center justify-center select-none text-center z-10 animate-fadeIn">
+          <p className="text-xs sm:text-sm font-bold text-zinc-500 dark:text-zinc-400 max-w-[85%] leading-relaxed">
+            🚫 You can't send messages to this group because you're no longer a participant.
+          </p>
         </div>
       ) : (
         <MessageInput

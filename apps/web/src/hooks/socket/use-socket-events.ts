@@ -444,6 +444,23 @@ export function useSocketEvents() {
       queryClient.invalidateQueries({ queryKey: ["statuses"] });
     };
 
+    const onConversationDeleted = ({ conversationId, type }: { conversationId: string; type?: string }) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      if (type !== "group" && conversationId === activeRoomId) {
+        useChatStore.getState().setActiveRoomId(null);
+      }
+      socket.emit("leave_room", conversationId);
+    };
+
+    const onConversationUpdated = (conversation: any) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      const convId = conversation._id || conversation.id;
+      if (convId === activeRoomId) {
+        queryClient.invalidateQueries({ queryKey: ["messages", activeRoomId] });
+      }
+    };
+
     socket.on("initial_online_users", onInitialOnlineUsers);
     socket.on("new_conversation", onNewConversation);
     socket.on("new_message", onNewMessage);
@@ -459,6 +476,8 @@ export function useSocketEvents() {
     socket.on("status_update", onStatusUpdate);
     socket.on("status_viewed", onStatusUpdate);
     socket.on("status_reacted", onStatusUpdate);
+    socket.on("conversation_deleted", onConversationDeleted);
+    socket.on("conversation_updated", onConversationUpdated);
 
     return () => {
       socket.off("initial_online_users", onInitialOnlineUsers);
@@ -476,6 +495,8 @@ export function useSocketEvents() {
       socket.off("status_update", onStatusUpdate);
       socket.off("status_viewed", onStatusUpdate);
       socket.off("status_reacted", onStatusUpdate);
+      socket.off("conversation_deleted", onConversationDeleted);
+      socket.off("conversation_updated", onConversationUpdated);
     };
   }, [socket, isConnected, queryClient, setUserOnline, setUserOffline, setOnlineUsers, setTyping, removeTyping, activeRoomId]);
 }

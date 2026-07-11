@@ -28,6 +28,7 @@ export interface Message {
   isDeleted?: boolean;
   deletedAt?: string;
   isStarred?: boolean;
+  type?: "text" | "image" | "audio" | "video" | "document" | "system";
 }
 
 export interface ChatRoom {
@@ -47,4 +48,5 @@ export interface ChatRoom {
   description?: string;
   isBlocked?: boolean;
   hasBlockedMe?: boolean;
+  isRemoved?: boolean;
 }

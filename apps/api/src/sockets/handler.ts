@@ -8,6 +8,7 @@ import { Message } from "@/models/Message";
 import { socketService } from "@/services/socket.service";
 import { redisClient } from "@/config/redis";
 import { messageService } from "@/services/message.service";
+import { conversationRepository } from "@/repositories/conversation.repository";
 import { logger } from "@/utils/logger";
 
 export function setupSocketHandlers(io: Server) {
@@ -159,21 +160,30 @@ export function setupSocketHandlers(io: Server) {
     // Handle marking messages as read in a conversation
     socket.on("read_conversation", async ({ conversationId }: { conversationId: string }) => {
       try {
+        const conv = await Conversation.findOne({
+          _id: conversationId,
+          participants: {
+            $elemMatch: {
+              userId: userId,
+              isDeleted: { $ne: true },
+            },
+          },
+          isActive: true,
+        });
+
+        if (!conv) {
+          return;
+        }
+
         const roomName = `conv:${conversationId}`;
         socket.join(roomName);
         const count = io.sockets.adapter.rooms.get(roomName)?.size || 0;
         io.to(roomName).emit("room_listeners_count", { conversationId, count });
 
-        const conv = await Conversation.findOne({
-          _id: conversationId,
-          "participants.userId": userId,
-        });
-
-        if (conv) {
-          const selfParticipant = conv.participants.find(
-            (p) => p.userId.toString() === userId
-          );
-          const clearedAt = selfParticipant?.clearedAt;
+        const selfParticipant = conv.participants.find(
+          (p) => p.userId.toString() === userId
+        );
+        const clearedAt = selfParticipant?.clearedAt;
 
           const messageQuery: any = { conversationId, isCleared: { $ne: true } };
           if (clearedAt) {
@@ -220,7 +230,6 @@ export function setupSocketHandlers(io: Server) {
               }
             }
           }
-        }
       } catch (err) {
         logger.error(`Error in read_conversation event: ${err}`);
       }
@@ -296,7 +305,12 @@ export function setupSocketHandlers(io: Server) {
     });
 
     // Handle join_room explicitly if frontend does it
-    socket.on("join_room", (roomId: string) => {
+    socket.on("join_room", async (roomId: string) => {
+      const isMember = await conversationRepository.isParticipant(roomId, userId);
+      if (!isMember) {
+        logger.warn(`User ${payload.username} attempted to join room conv:${roomId} without membership`);
+        return;
+      }
       const roomName = `conv:${roomId}`;
       socket.join(roomName);
       logger.info(`Socket ${socket.id} joined conversation room ${roomName}`);

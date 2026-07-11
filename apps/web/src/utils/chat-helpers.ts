@@ -11,6 +11,7 @@ interface RawParticipant {
   } | string;
   isPinned?: boolean;
   isArchived?: boolean;
+  isDeleted?: boolean;
 }
 
 export interface RawConversation {
@@ -112,6 +113,7 @@ export const formatConversation = (conv: RawConversation, currentUserId: string)
     description: (conv as any).description || undefined,
     isBlocked: (conv as any).isBlocked || false,
     hasBlockedMe: (conv as any).hasBlockedMe || false,
+    isRemoved: selfParticipant?.isDeleted || false,
   };
 };
 
@@ -197,6 +199,7 @@ export const formatMessage = (msg: RawMessage, currentUserId: string): Message =
     isEdited: (msg as any).isEdited || false,
     isDeleted: (msg as any).isDeleted || false,
     isStarred: msg.isStarred || false,
+    type: (msg as any).type || "text",
     attachment: firstAttachment
       ? {
           name: firstAttachment.filename,

@@ -209,6 +209,124 @@ export class ConversationController {
       next(error);
     }
   };
+
+  /**
+   * Update group properties (name, description, avatar).
+   */
+  updateGroup = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { name, description, avatar } = req.body;
+      const userId = req.user!.id;
+
+      const conversation = await conversationService.updateGroup(
+        id!,
+        userId,
+        { name, description, avatar }
+      );
+
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { conversation: sanitized },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Add members to a group conversation.
+   */
+  addParticipants = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id } = req.params;
+      const { participantIds } = req.body;
+      const userId = req.user!.id;
+
+      const conversation = await conversationService.addParticipants(
+        id!,
+        userId,
+        participantIds
+      );
+
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { conversation: sanitized },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Remove a member or leave the group.
+   */
+  removeParticipant = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id, userId: targetUserId } = req.params;
+      const userId = req.user!.id;
+
+      const conversation = await conversationService.removeParticipant(
+        id!,
+        userId,
+        targetUserId!
+      );
+
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { conversation: sanitized },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  /**
+   * Promote a member to admin.
+   */
+  promoteToAdmin = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
+    try {
+      const { id, userId: targetUserId } = req.params;
+      const userId = req.user!.id;
+
+      const conversation = await conversationService.promoteToAdmin(
+        id!,
+        userId,
+        targetUserId!
+      );
+
+      const sanitized = await sanitizeConversationForUser(conversation, userId);
+      res.status(200).json({
+        status: "success",
+        statusCode: 200,
+        data: { conversation: sanitized },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export const conversationController = new ConversationController();

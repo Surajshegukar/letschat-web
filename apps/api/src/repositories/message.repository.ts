@@ -45,7 +45,8 @@ export const messageRepository = {
     conversationId: string,
     cursorId?: string,
     limit: number = 50,
-    clearedAt?: Date
+    clearedAt?: Date,
+    maxCreatedAt?: Date
   ): Promise<IMessage[]> {
     const query: any = {
       conversationId,
@@ -56,8 +57,10 @@ export const messageRepository = {
       query._id = { $lt: new mongoose.Types.ObjectId(cursorId) };
     }
 
-    if (clearedAt) {
-      query.createdAt = { $gt: clearedAt };
+    if (clearedAt || maxCreatedAt) {
+      query.createdAt = {};
+      if (clearedAt) query.createdAt.$gt = clearedAt;
+      if (maxCreatedAt) query.createdAt.$lte = maxCreatedAt;
     }
 
     const messages = await Message.find(query)

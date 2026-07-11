@@ -503,3 +503,90 @@ export function useStarMessage() {
     },
   });
 }
+
+/**
+ * Hook to update group settings (name, description, avatar).
+ */
+export function useUpdateGroup() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { id: string; data: { name?: string; description?: string; avatar?: string } }) =>
+      conversationService.updateGroup(args.id, args.data),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.id] });
+      toast.success("Group updated successfully");
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to update group";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to add participants to a group.
+ */
+export function useAddParticipants() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { id: string; participantIds: string[] }) =>
+      conversationService.addParticipants(args.id, args.participantIds),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.id] });
+      toast.success("Participants added successfully");
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to add participants";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to remove a participant or leave the group.
+ */
+export function useRemoveParticipant() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { id: string; userId: string }) =>
+      conversationService.removeParticipant(args.id, args.userId),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.id] });
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to remove participant";
+      toast.error(message);
+    },
+  });
+}
+
+/**
+ * Hook to promote a participant to admin.
+ */
+export function usePromoteToAdmin() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (args: { id: string; userId: string }) =>
+      conversationService.promoteToAdmin(args.id, args.userId),
+    onSuccess: (response, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
+      queryClient.invalidateQueries({ queryKey: ["messages", variables.id] });
+      toast.success("Participant promoted to admin");
+    },
+    onError: (error: unknown) => {
+      const apiError = error as { response?: { data?: { message?: string } } };
+      const message = apiError.response?.data?.message || "Failed to promote participant";
+      toast.error(message);
+    },
+  });
+}

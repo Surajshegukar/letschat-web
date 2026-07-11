@@ -105,7 +105,7 @@ export class MessageService {
     }
 
     const isMember = conversationBefore.participants.some(
-      (p) => p.userId._id.toString() === senderId
+      (p) => p.userId._id.toString() === senderId && !p.isDeleted
     );
     if (!isMember) {
       const err: any = new Error("You are not a participant of this conversation");
@@ -198,6 +198,7 @@ export class MessageService {
       const now = new Date();
 
       const participantIds = conversation.participants
+        .filter((p) => !p.isDeleted)
         .map((p) => p.userId._id)
         .filter((id) => id.toString() !== senderId);
 
@@ -211,6 +212,7 @@ export class MessageService {
       }
 
       conversation.participants.forEach((p) => {
+        if (p.isDeleted) return;
         const pIdStr = p.userId._id.toString();
         if (pIdStr === senderId) {
           p.lastReadMessageId = messageObjectId;
@@ -250,17 +252,18 @@ export class MessageService {
       }
     }
 
-    // 6. Format payload & emit socket events
+    // Emit real-time socket event directly to each active participant's personal room.
+    // We intentionally do NOT use emitToConversation (room broadcast) here because
+    // removed users may still be lingering in the socket room.
+    // Compute the sender's payload first — also used as the HTTP response body.
     const messagePayload = formatMessagePayload(message, conversation, senderId);
-
-    // Emit real-time socket event to conversation room
-    socketService.emitToConversation(conversationId, "new_message", messagePayload);
-
-    // Emit directly to each participant's personal room (handles race where they haven't joined room yet)
     if (conversation) {
       conversation.participants.forEach((p) => {
+        if (p.isDeleted) return;
         const pId = p.userId._id.toString();
-        const messagePayloadForUser = formatMessagePayload(message, conversation, pId);
+        const messagePayloadForUser = pId === senderId
+          ? messagePayload
+          : formatMessagePayload(message, conversation, pId);
         socketService.emitToUser(pId, "new_message", messagePayloadForUser);
       });
     }
@@ -296,13 +299,17 @@ export class MessageService {
     }
 
     const clearedAt = selfParticipant.clearedAt;
+    const maxCreatedAt = selfParticipant.isDeleted
+      ? (selfParticipant as any).removedAt || conversation.updatedAt
+      : undefined;
 
     // 2. Fetch messages (requests 1 extra item to check for hasMore)
     const messages = await messageRepository.findByConversation(
       conversationId,
       pagination.cursor,
       limit + 1,
-      clearedAt
+      clearedAt,
+      maxCreatedAt
     );
 
     const hasMore = messages.length > limit;

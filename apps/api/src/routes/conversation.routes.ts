@@ -3,7 +3,7 @@ import { conversationController } from "@/controllers/conversation.controller";
 import { messageController } from "@/controllers/message.controller";
 import { authenticateJWT } from "@/middlewares/auth";
 import { validate } from "@/middlewares/validate";
-import { createConversationSchema } from "@/validators/conversation.validator";
+import { createConversationSchema, updateConversationSchema, addParticipantsSchema } from "@/validators/conversation.validator";
 import { sendMessageSchema } from "@/validators/message.validator";
 import { upload } from "@/middlewares/upload";
 
@@ -18,6 +18,10 @@ router.post(
   conversationController.createConversation
 );
 router.get("/:id", authenticateJWT, conversationController.getConversation);
+router.patch("/:id", authenticateJWT, validate(updateConversationSchema), conversationController.updateGroup);
+router.post("/:id/participants", authenticateJWT, validate(addParticipantsSchema), conversationController.addParticipants);
+router.delete("/:id/participants/:userId", authenticateJWT, conversationController.removeParticipant);
+router.patch("/:id/participants/:userId/role", authenticateJWT, conversationController.promoteToAdmin);
 router.patch("/:id/pin", authenticateJWT, conversationController.togglePinConversation);
 router.patch("/:id/archive", authenticateJWT, conversationController.toggleArchiveConversation);
 router.delete("/:id", authenticateJWT, conversationController.deleteConversation);

@@ -143,4 +143,36 @@ export const conversationService = {
     const response = await api.patch(`/conversations/${conversationId}/messages/${messageId}/star`);
     return response.data;
   },
+
+  /**
+   * Update group properties (name, description, avatar).
+   */
+  async updateGroup(id: string, data: { name?: string; description?: string; avatar?: string }) {
+    const response = await api.patch(`/conversations/${id}`, data);
+    return response.data;
+  },
+
+  /**
+   * Add participants to group.
+   */
+  async addParticipants(id: string, participantIds: string[]) {
+    const response = await api.post(`/conversations/${id}/participants`, { participantIds });
+    return response.data;
+  },
+
+  /**
+   * Remove a participant or leave the group.
+   */
+  async removeParticipant(id: string, userId: string) {
+    const response = await api.delete(`/conversations/${id}/participants/${userId}`);
+    return response.data;
+  },
+
+  /**
+   * Promote a participant to admin.
+   */
+  async promoteToAdmin(id: string, userId: string) {
+    const response = await api.patch(`/conversations/${id}/participants/${userId}/role`);
+    return response.data;
+  },
 };

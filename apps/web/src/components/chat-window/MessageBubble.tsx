@@ -198,6 +198,17 @@ export function MessageBubble({
     );
   };
 
+  // System message — render centered, simple capsule style
+  if (message.type === "system") {
+    return (
+      <div className="flex justify-center my-3.5 w-full animate-fadeIn select-none">
+        <div className="px-4 py-1.5 rounded-full text-[10.5px] sm:text-xs font-semibold text-zinc-550 dark:text-zinc-400 bg-zinc-100 dark:bg-zinc-900/60 border border-zinc-150 dark:border-zinc-800/40 text-center max-w-[85%] shadow-sm">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
+
   // Deleted message — render a minimal tombstone, no actions
   if (message.isDeleted) {
     return wrapWithSelection(

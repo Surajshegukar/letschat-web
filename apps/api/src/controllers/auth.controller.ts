@@ -10,7 +10,7 @@ const REFRESH_COOKIE_OPTIONS = {
 };
 
 export class AuthController {
-  /**
+  /** 
    * Register user and send verification email.
    */
   register = async (req: Request, res: Response, next: NextFunction): Promise<void> => {

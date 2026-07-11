@@ -7,6 +7,8 @@ interface ChatHeaderProps {
   avatarUrl?: string;
   isGroup?: boolean;
   isOnline?: boolean;
+  memberCount?: number;
+  isRemoved?: boolean;
   isDetailsOpen: boolean;
   onToggleDetails: () => void;
   onStartAudioCall?: () => void;
@@ -26,6 +28,8 @@ export function ChatHeader({
   avatarUrl,
   isGroup = false,
   isOnline = false,
+  memberCount = 0,
+  isRemoved = false,
   isDetailsOpen,
   onToggleDetails,
   onStartAudioCall,
@@ -107,7 +111,13 @@ export function ChatHeader({
             {roomName}
           </h3>
           <p className="text-[10px] text-zinc-400 mt-1.5 leading-none">
-            {isGroup ? "Group Chat" : isOnline ? "Online" : "Offline"}
+            {isGroup
+              ? isRemoved
+                ? "You were removed from this group"
+                : `${memberCount} members`
+              : isOnline
+              ? "Online"
+              : "Offline"}
           </p>
         </div>
       </div>

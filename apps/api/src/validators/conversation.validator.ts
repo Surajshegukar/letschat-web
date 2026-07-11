@@ -26,8 +26,15 @@ export const updateConversationSchema = z.object({
     .string()
     .max(200, "Group description must not exceed 200 characters")
     .optional(),
-  avatar: z.string().url("Invalid avatar URL format").optional(),
+  avatar: z.string().optional(),
+});
+
+export const addParticipantsSchema = z.object({
+  participantIds: z
+    .array(z.string().regex(/^[0-9a-fA-F]{24}$/, "Invalid participant user ID"))
+    .min(1, "At least one participant ID must be provided"),
 });
 
 export type CreateConversationInput = z.infer<typeof createConversationSchema>;
 export type UpdateConversationInput = z.infer<typeof updateConversationSchema>;
+export type AddParticipantsInput = z.infer<typeof addParticipantsSchema>;

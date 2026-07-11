@@ -33,12 +33,21 @@ export const conversationRepository = {
 
     const conversations = await Conversation.find({
       isActive: true,
-      participants: {
-        $elemMatch: {
-          userId: userId,
-          isDeleted: { $ne: true },
+      $or: [
+        {
+          type: "direct",
+          participants: {
+            $elemMatch: {
+              userId: userId,
+              isDeleted: { $ne: true },
+            },
+          },
         },
-      },
+        {
+          type: "group",
+          "participants.userId": userId,
+        },
+      ],
     })
       .populate("participants.userId", "username email displayName avatar about isOnline lastSeen isDeleted")
       .sort({ "lastMessage.timestamp": -1, updatedAt: -1 })
@@ -93,12 +102,17 @@ export const conversationRepository = {
     conversationId: string,
     lastMessage: ILastMessage
   ): Promise<IConversation | null> {
+    const conversation = await Conversation.findById(conversationId).select("type").exec();
+    if (!conversation) return null;
+
+    const update: any = { lastMessage };
+    if (conversation.type === "direct") {
+      update.$set = { "participants.$[].isDeleted": false };
+    }
+
     return Conversation.findByIdAndUpdate(
       conversationId,
-      {
-        lastMessage,
-        $set: { "participants.$[].isDeleted": false },
-      },
+      update,
       { new: true }
     ).exec();
   },
@@ -109,7 +123,12 @@ export const conversationRepository = {
   async isParticipant(conversationId: string, userId: string): Promise<boolean> {
     const count = await Conversation.countDocuments({
       _id: conversationId,
-      "participants.userId": userId,
+      participants: {
+        $elemMatch: {
+          userId: userId,
+          isDeleted: { $ne: true },
+        },
+      },
       isActive: true,
     }).exec();
     return count > 0;
